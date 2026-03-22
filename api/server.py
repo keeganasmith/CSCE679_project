@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field, model_validator
+from pipeline.trends import DegradationCriteria, TrendOptions, annotate_series, evaluate_degradation
 
 SQLITE_PATH = Path("data/features/player_features.sqlite")
 DEFAULT_FEATURES = [
@@ -62,6 +63,16 @@ class PlayerQueryRequest(BaseModel):
     cluster_label: Optional[int] = None
 
 
+class TrendQueryParams(BaseModel):
+    smoothing: Literal["none", "ema", "moving_average"] = "ema"
+    smoothing_window: int = Field(5, ge=1, le=200)
+    ema_alpha: float = Field(0.35, gt=0.0, le=1.0)
+    regression: Literal["ols", "theil_sen"] = "theil_sen"
+    min_points: int = Field(6, ge=2, le=1000)
+    bootstrap_samples: int = Field(300, ge=50, le=2000)
+    change_point_z: float = Field(2.0, ge=0.5, le=10.0)
+
+
 @dataclass
 class ClusterCacheEntry:
     request_id: str
@@ -82,6 +93,22 @@ class ClusterCacheEntry:
 app = FastAPI(title="Player Clustering API", version="0.1.0")
 _cache_lock = threading.Lock()
 _cluster_cache: Dict[str, ClusterCacheEntry] = {}
+METRIC_COLUMN_MAP: Dict[str, str] = {
+    "elo": "elo_pre",
+    "ace_pct": "aces_per_service_game",
+    "break_points_won_pct": "break_points_saved_pct",
+    "win_pct": "career_win_pct",
+}
+
+
+def _metric_column(metric: str) -> str:
+    col = METRIC_COLUMN_MAP.get(metric)
+    if not col:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported metric '{metric}'. Supported: {sorted(METRIC_COLUMN_MAP)}",
+        )
+    return col
 
 
 def _connect() -> sqlite3.Connection:
@@ -242,6 +269,41 @@ def _rows_to_matrix(rows: List[sqlite3.Row], columns: List[str]) -> Tuple[List[s
     if not vectors:
         raise HTTPException(status_code=400, detail="No rows with complete feature vectors for selected attributes")
     return player_ids, np.asarray(vectors, dtype=np.float64)
+
+
+def _load_metric_points(
+    player_id: str,
+    metric: str,
+    start_date: Optional[str],
+    end_date: Optional[str],
+    limit: int,
+) -> Tuple[str, List[Dict[str, Any]]]:
+    column = _metric_column(metric)
+    clauses = ['player_id = ?', f'"{column}" IS NOT NULL']
+    params: List[Any] = [player_id]
+    if start_date:
+        clauses.append("match_date >= ?")
+        params.append(start_date)
+    if end_date:
+        clauses.append("match_date <= ?")
+        params.append(end_date)
+
+    where = " AND ".join(clauses)
+    sql = f"""
+        SELECT match_date, "{column}" AS metric_value
+        FROM player_features
+        WHERE {where}
+        ORDER BY match_date ASC
+        LIMIT ?
+    """
+    params.append(limit)
+    with _connect() as conn:
+        rows = conn.execute(sql, params).fetchall()
+
+    points = [{"match_date": row["match_date"], "value": float(row["metric_value"])} for row in rows]
+    if not points:
+        raise HTTPException(status_code=404, detail=f"No metric points found for player_id={player_id}, metric={metric}")
+    return column, points
 
 
 def _load_cluster(req: ClusterRequest) -> ClusterCacheEntry:
@@ -505,6 +567,112 @@ def query_players(req: PlayerQueryRequest) -> Dict[str, Any]:
         "offset": req.offset,
         "limit": req.limit,
         "players": [dict(row) for row in rows],
+    }
+
+
+@app.get("/players/{player_id}/metrics/timeseries")
+def player_metric_timeseries(
+    player_id: str,
+    metric: Literal["elo", "ace_pct", "break_points_won_pct", "win_pct"] = Query(...),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    limit: int = Query(500, ge=10, le=5000),
+    smoothing: Literal["none", "ema", "moving_average"] = Query("ema"),
+    smoothing_window: int = Query(5, ge=1, le=200),
+    ema_alpha: float = Query(0.35, gt=0.0, le=1.0),
+    regression: Literal["ols", "theil_sen"] = Query("theil_sen"),
+    min_points: int = Query(6, ge=2, le=1000),
+    bootstrap_samples: int = Query(300, ge=50, le=2000),
+    change_point_z: float = Query(2.0, ge=0.5, le=10.0),
+) -> Dict[str, Any]:
+    source_column, points = _load_metric_points(player_id, metric, start_date, end_date, limit)
+    params = TrendQueryParams(
+        smoothing=smoothing,
+        smoothing_window=smoothing_window,
+        ema_alpha=ema_alpha,
+        regression=regression,
+        min_points=min_points,
+        bootstrap_samples=bootstrap_samples,
+        change_point_z=change_point_z,
+    )
+    trend_payload = annotate_series(
+        points=points,
+        value_key="value",
+        options=TrendOptions(
+            smoothing=params.smoothing,
+            smoothing_window=params.smoothing_window,
+            ema_alpha=params.ema_alpha,
+            regression=params.regression,
+            min_points=params.min_points,
+            bootstrap_samples=params.bootstrap_samples,
+            change_point_z=params.change_point_z,
+        ),
+    )
+    return {
+        "player_id": player_id,
+        "metric": metric,
+        "source_column": source_column,
+        "count": len(points),
+        "points": trend_payload["points"],
+        "trend": trend_payload["trend"],
+    }
+
+
+@app.get("/players/{player_id}/metrics/degradation")
+def player_metric_degradation(
+    player_id: str,
+    metric: Literal["elo", "ace_pct", "break_points_won_pct", "win_pct"] = Query(...),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    limit: int = Query(500, ge=10, le=5000),
+    smoothing: Literal["none", "ema", "moving_average"] = Query("ema"),
+    smoothing_window: int = Query(5, ge=1, le=200),
+    ema_alpha: float = Query(0.35, gt=0.0, le=1.0),
+    regression: Literal["ols", "theil_sen"] = Query("theil_sen"),
+    min_points: int = Query(6, ge=2, le=1000),
+    bootstrap_samples: int = Query(300, ge=50, le=2000),
+    change_point_z: float = Query(2.0, ge=0.5, le=10.0),
+    min_negative_slope: float = Query(0.0, ge=0.0),
+    drawdown_threshold: float = Query(0.08, ge=0.0),
+    sustained_decline_window: int = Query(5, ge=2, le=200),
+    sustained_decline_min_drop: float = Query(0.02, ge=0.0),
+) -> Dict[str, Any]:
+    source_column, points = _load_metric_points(player_id, metric, start_date, end_date, limit)
+    options = TrendOptions(
+        smoothing=smoothing,
+        smoothing_window=smoothing_window,
+        ema_alpha=ema_alpha,
+        regression=regression,
+        min_points=min_points,
+        bootstrap_samples=bootstrap_samples,
+        change_point_z=change_point_z,
+    )
+    annotated = annotate_series(points=points, value_key="value", options=options)
+    criteria = DegradationCriteria(
+        min_negative_slope=min_negative_slope,
+        drawdown_threshold=drawdown_threshold,
+        sustained_decline_window=sustained_decline_window,
+        sustained_decline_min_drop=sustained_decline_min_drop,
+    )
+    degradation = evaluate_degradation(
+        [p.get("smoothed_value") for p in annotated["points"]],
+        trend=annotated["trend"],
+        criteria=criteria,
+    )
+    return {
+        "player_id": player_id,
+        "metric": metric,
+        "source_column": source_column,
+        "count": len(points),
+        "criteria": {
+            "min_negative_slope": min_negative_slope,
+            "drawdown_threshold": drawdown_threshold,
+            "sustained_decline_window": sustained_decline_window,
+            "sustained_decline_min_drop": sustained_decline_min_drop,
+        },
+        "trend": annotated["trend"],
+        "degradation": degradation,
+        "points": annotated["points"],
     }
 
 
