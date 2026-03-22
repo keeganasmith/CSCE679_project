@@ -1,0 +1,174 @@
+{
+  "generated_at_utc": "2026-03-22T04:51:04Z",
+  "input_dir": "data",
+  "output_dir": "data/processed",
+  "totals": {
+    "files_processed": 27,
+    "row_count": 94184,
+    "corrected_matches": 94149
+  },
+  "files": [
+    {
+      "source_file": "data/atp_2000.csv",
+      "output_file": "data/processed/atp_2000_clean.csv",
+      "row_count": 2840,
+      "corrected_matches": 2840
+    },
+    {
+      "source_file": "data/atp_2001.csv",
+      "output_file": "data/processed/atp_2001_clean.csv",
+      "row_count": 2818,
+      "corrected_matches": 2818
+    },
+    {
+      "source_file": "data/atp_2002.csv",
+      "output_file": "data/processed/atp_2002_clean.csv",
+      "row_count": 2706,
+      "corrected_matches": 2706
+    },
+    {
+      "source_file": "data/atp_2003.csv",
+      "output_file": "data/processed/atp_2003_clean.csv",
+      "row_count": 2722,
+      "corrected_matches": 2722
+    },
+    {
+      "source_file": "data/atp_2004.csv",
+      "output_file": "data/processed/atp_2004_clean.csv",
+      "row_count": 2769,
+      "corrected_matches": 2769
+    },
+    {
+      "source_file": "data/atp_2005.csv",
+      "output_file": "data/processed/atp_2005_clean.csv",
+      "row_count": 2799,
+      "corrected_matches": 2799
+    },
+    {
+      "source_file": "data/atp_2006.csv",
+      "output_file": "data/processed/atp_2006_clean.csv",
+      "row_count": 2799,
+      "corrected_matches": 2799
+    },
+    {
+      "source_file": "data/atp_2007.csv",
+      "output_file": "data/processed/atp_2007_clean.csv",
+      "row_count": 3522,
+      "corrected_matches": 3522
+    },
+    {
+      "source_file": "data/atp_2008.csv",
+      "output_file": "data/processed/atp_2008_clean.csv",
+      "row_count": 4051,
+      "corrected_matches": 4051
+    },
+    {
+      "source_file": "data/atp_2009.csv",
+      "output_file": "data/processed/atp_2009_clean.csv",
+      "row_count": 4247,
+      "corrected_matches": 4247
+    },
+    {
+      "source_file": "data/atp_2010.csv",
+      "output_file": "data/processed/atp_2010_clean.csv",
+      "row_count": 4326,
+      "corrected_matches": 4326
+    },
+    {
+      "source_file": "data/atp_2011.csv",
+      "output_file": "data/processed/atp_2011_clean.csv",
+      "row_count": 4286,
+      "corrected_matches": 4286
+    },
+    {
+      "source_file": "data/atp_2012.csv",
+      "output_file": "data/processed/atp_2012_clean.csv",
+      "row_count": 4360,
+      "corrected_matches": 4360
+    },
+    {
+      "source_file": "data/atp_2013.csv",
+      "output_file": "data/processed/atp_2013_clean.csv",
+      "row_count": 4320,
+      "corrected_matches": 4320
+    },
+    {
+      "source_file": "data/atp_2014.csv",
+      "output_file": "data/processed/atp_2014_clean.csv",
+      "row_count": 4226,
+      "corrected_matches": 4226
+    },
+    {
+      "source_file": "data/atp_2015.csv",
+      "output_file": "data/processed/atp_2015_clean.csv",
+      "row_count": 4340,
+      "corrected_matches": 4340
+    },
+    {
+      "source_file": "data/atp_2016.csv",
+      "output_file": "data/processed/atp_2016_clean.csv",
+      "row_count": 3851,
+      "corrected_matches": 3851
+    },
+    {
+      "source_file": "data/atp_2017.csv",
+      "output_file": "data/processed/atp_2017_clean.csv",
+      "row_count": 3807,
+      "corrected_matches": 3807
+    },
+    {
+      "source_file": "data/atp_2018.csv",
+      "output_file": "data/processed/atp_2018_clean.csv",
+      "row_count": 3835,
+      "corrected_matches": 3835
+    },
+    {
+      "source_file": "data/atp_2019.csv",
+      "output_file": "data/processed/atp_2019_clean.csv",
+      "row_count": 3811,
+      "corrected_matches": 3811
+    },
+    {
+      "source_file": "data/atp_2020.csv",
+      "output_file": "data/processed/atp_2020_clean.csv",
+      "row_count": 1935,
+      "corrected_matches": 1935
+    },
+    {
+      "source_file": "data/atp_2021.csv",
+      "output_file": "data/processed/atp_2021_clean.csv",
+      "row_count": 3698,
+      "corrected_matches": 3698
+    },
+    {
+      "source_file": "data/atp_2022.csv",
+      "output_file": "data/processed/atp_2022_clean.csv",
+      "row_count": 3888,
+      "corrected_matches": 3888
+    },
+    {
+      "source_file": "data/atp_2023.csv",
+      "output_file": "data/processed/atp_2023_clean.csv",
+      "row_count": 3913,
+      "corrected_matches": 3913
+    },
+    {
+      "source_file": "data/atp_2024.csv",
+      "output_file": "data/processed/atp_2024_clean.csv",
+      "row_count": 3927,
+      "corrected_matches": 3927
+    },
+    {
+      "source_file": "data/atp_2025.csv",
+      "output_file": "data/processed/atp_2025_clean.csv",
+      "row_count": 3850,
+      "corrected_matches": 3840
+    },
+    {
+      "source_file": "data/atp_2026.csv",
+      "output_file": "data/processed/atp_2026_clean.csv",
+      "row_count": 538,
+      "corrected_matches": 513
+    }
+  ]
+}
