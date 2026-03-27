@@ -50,7 +50,6 @@ FEATURE_COLUMNS: Sequence[Tuple[str, str]] = (
     ("is_winner", "1 if focal player won the match, else 0."),
     ("elo_pre", "Player Elo rating immediately before this match."),
     ("opponent_elo_pre", "Opponent Elo rating immediately before this match."),
-    ("elo_delta_expected", "Expected Elo gain based on win probability pre-match."),
     ("career_matches", "Count of matches played by player prior to this match."),
     ("career_win_pct", "Career win percentage prior to this match."),
     ("service_points_won_pct", "Match-level total service points won percentage."),
@@ -383,9 +382,9 @@ def compute_features(
             b.player_id: b_elo,
         }
 
-        for obs, opponent_elo, expected in (
-            (a, b_elo, expected_a),
-            (b, a_elo, expected_b),
+        for obs, opponent_elo in (
+            (a, b_elo),
+            (b, a_elo),
         ):
             history_entries = list(player_history[obs.player_id])
             surface_entries = [e for e in history_entries if e.surface == obs.surface]
@@ -401,7 +400,6 @@ def compute_features(
                 "is_winner": obs.is_winner,
                 "elo_pre": player_elo[obs.player_id],
                 "opponent_elo_pre": opponent_elo,
-                "elo_delta_expected": ELO_K_FACTOR * (obs.is_winner - expected),
                 "career_matches": state.matches_played,
                 "career_win_pct": (state.wins / state.matches_played) if state.matches_played else None,
                 "service_points_won_pct": obs.service_points_won_pct,

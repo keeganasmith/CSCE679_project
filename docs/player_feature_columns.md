@@ -11,7 +11,6 @@
 | `is_winner` | 1 if focal player won the match, else 0. |
 | `elo_pre` | Player Elo rating immediately before this match. |
 | `opponent_elo_pre` | Opponent Elo rating immediately before this match. |
-| `elo_delta_expected` | Expected Elo gain based on win probability pre-match. |
 | `career_matches` | Count of matches played by player prior to this match. |
 | `career_win_pct` | Career win percentage prior to this match. |
 | `service_points_won_pct` | Match-level total service points won percentage. |

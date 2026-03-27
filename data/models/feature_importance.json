@@ -1,0 +1,30 @@
+[
+  {
+    "feature": "service_points_won_pct",
+    "importance": 0.5347238024807243
+  },
+  {
+    "feature": "return_points_won_pct",
+    "importance": 0.3866612823151873
+  },
+  {
+    "feature": "matches_last_30_days",
+    "importance": 0.07182169559699456
+  },
+  {
+    "feature": "break_points_saved_pct",
+    "importance": 0.0035401659604586315
+  },
+  {
+    "feature": "surface_win_pct_last_90_days",
+    "importance": 0.0030124802980622187
+  },
+  {
+    "feature": "srv_points_won_last_20_matches",
+    "importance": 0.00013070565849638188
+  },
+  {
+    "feature": "event_year",
+    "importance": 0.00010986769007651543
+  }
+]

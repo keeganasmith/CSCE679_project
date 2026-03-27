@@ -25,6 +25,7 @@ except ImportError as exc:  # pragma: no cover
 
 ID_COLUMNS = {"match_id", "match_date", "surface", "player_id", "opponent_id"}
 TARGET_COLUMN = "is_winner"
+LEAKED_COLUMNS = {"elo_delta_expected"}
 DEFAULT_MODEL_DIR = Path("data/models")
 
 
@@ -69,7 +70,15 @@ def _connect(sqlite_path: Path) -> sqlite3.Connection:
 def _feature_columns(conn: sqlite3.Connection, table: str) -> List[str]:
     rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
     names = [str(row[1]) for row in rows]
-    return [c for c in names if c not in ID_COLUMNS and c != TARGET_COLUMN]
+    leaked_present = sorted(col for col in names if col in LEAKED_COLUMNS)
+    filtered = [
+        c for c in names if c not in ID_COLUMNS and c != TARGET_COLUMN and c not in LEAKED_COLUMNS
+    ]
+    if leaked_present:
+        raise SystemExit(
+            f"Leaked columns present in model feature list: {', '.join(leaked_present)}"
+        )
+    return filtered
 
 
 def load_dataset(sqlite_path: Path, table: str) -> Dataset:

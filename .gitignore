@@ -6,3 +6,8 @@ venv
 # Frontend build artifacts
 frontend/node_modules/
 frontend/dist/
+
+# Large generated ML/data artifacts
+data/features/*.parquet
+data/features/*.sqlite
+data/models/*.pkl
