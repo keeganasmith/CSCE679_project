@@ -393,7 +393,13 @@ def predict_match_outcome(req: PredictRequest) -> Dict[str, Any]:
 
     prob = float(model.predict_proba(x)[0, 1])
     label = int(prob >= threshold)
-    explanation = prediction_explanation(model, x, feature_columns, req.top_k_features)
+    explanation = prediction_explanation(
+        model,
+        x,
+        feature_columns,
+        req.top_k_features,
+        include_tree_structure=req.include_tree_structure,
+    )
 
     return {
         "predicted_outcome": label,
