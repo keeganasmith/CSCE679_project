@@ -95,6 +95,17 @@ function drawChart() {
   svg.append('path').datum(clipped).attr('fill', 'none').attr('stroke', '#059669').attr('stroke-width', 2).attr('d', line('win', yRight))
   svg.append('path').datum(clipped).attr('fill', 'none').attr('stroke', '#f97316').attr('stroke-width', 2).attr('d', line('ace', yRight))
 
+  const legendItems = [
+    { label: 'Elo', color: '#1d4ed8' },
+    { label: 'Win %', color: '#059669' },
+    { label: 'Ace %', color: '#f97316' }
+  ]
+
+  const legend = svg.append('g').attr('transform', `translate(${margin.left}, ${height - margin.bottom + 30})`)
+  const legendEntry = legend.selectAll('g').data(legendItems).enter().append('g').attr('transform', (_, i) => `translate(${i * 120}, 0)`)
+  legendEntry.append('line').attr('x1', 0).attr('x2', 22).attr('y1', 0).attr('y2', 0).attr('stroke-width', 3).attr('stroke', (d) => d.color)
+  legendEntry.append('text').attr('x', 30).attr('y', 4).attr('font-size', 12).text((d) => d.label)
+
   svg.append('text').attr('x', margin.left).attr('y', margin.top - 8).text('Elo')
   svg.append('text').attr('x', width - margin.right - 70).attr('y', margin.top - 8).text('Win% / Ace%')
 }
