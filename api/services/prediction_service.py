@@ -34,9 +34,15 @@ def prediction_explanation(
     x: np.ndarray,
     feature_columns: List[str],
     top_k: int,
+    include_tree_structure: bool = True,
 ) -> Dict[str, Any]:
     if not hasattr(model, "tree_"):
-        return {"top_contributing_features": [], "path_summary": {"rules": [], "leaf_id": None}}
+        return {
+            "top_contributing_features": [],
+            "path_summary": {"rules": [], "leaf_id": None},
+            "path_node_ids": [],
+            "tree_structure": None,
+        }
 
     tree = model.tree_
     node_indicator = model.decision_path(x)
@@ -78,12 +84,56 @@ def prediction_explanation(
     leaf_counts = tree.value[leaf_id][0]
     total = float(np.sum(leaf_counts))
     win_prob = float(leaf_counts[1] / total) if total else None
+
+    serialized_tree: List[Dict[str, Any]] | None = None
+    if include_tree_structure:
+        serialized_tree = []
+        class_count = tree.value.shape[-1] if len(tree.value.shape) > 2 else 0
+        for node_id in range(tree.node_count):
+            left_id = int(tree.children_left[node_id])
+            right_id = int(tree.children_right[node_id])
+            is_leaf = left_id == right_id
+
+            feature_index: int | None = None
+            feature_name: str | None = None
+            threshold: float | None = None
+            if not is_leaf:
+                feature_index = int(tree.feature[node_id])
+                feature_name = (
+                    feature_columns[feature_index]
+                    if 0 <= feature_index < len(feature_columns)
+                    else None
+                )
+                threshold = float(tree.threshold[node_id])
+
+            class_distribution: List[float] = []
+            if class_count:
+                class_distribution = [
+                    float(v) for v in tree.value[node_id][0].tolist()
+                ]
+
+            serialized_tree.append(
+                {
+                    "node_id": int(node_id),
+                    "split_feature_index": feature_index,
+                    "split_feature_name": feature_name,
+                    "threshold": threshold,
+                    "left_child_id": left_id,
+                    "right_child_id": right_id,
+                    "is_leaf": is_leaf,
+                    "sample_count": int(tree.n_node_samples[node_id]),
+                    "class_distribution": class_distribution,
+                }
+            )
+
     return {
         "top_contributing_features": top,
+        "path_node_ids": node_ids,
         "path_summary": {
             "leaf_id": leaf_id,
             "sample_count": int(tree.n_node_samples[leaf_id]),
             "leaf_win_probability": win_prob,
             "rules": rules,
         },
+        "tree_structure": serialized_tree,
     }

@@ -74,6 +74,10 @@ class PredictRequest(BaseModel):
         ..., description="Feature vector aligned to training feature names."
     )
     top_k_features: int = Field(5, ge=1, le=20)
+    include_tree_structure: bool = Field(
+        True,
+        description="Include full serialized tree structure in explanation payload.",
+    )
 
 
 @dataclass
