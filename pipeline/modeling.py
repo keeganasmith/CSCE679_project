@@ -7,6 +7,7 @@ import argparse
 import json
 import pickle
 import sqlite3
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -84,8 +85,10 @@ def _feature_columns(conn: sqlite3.Connection, table: str) -> List[str]:
         c for c in names if c not in ID_COLUMNS and c != TARGET_COLUMN and c not in LEAKED_COLUMNS
     ]
     if leaked_present:
-        raise SystemExit(
-            f"Leaked columns present in model feature list: {', '.join(leaked_present)}"
+        print(
+            "Warning: leaked post-match columns detected and excluded from training features: "
+            + ", ".join(leaked_present),
+            file=sys.stderr,
         )
     return filtered
 
