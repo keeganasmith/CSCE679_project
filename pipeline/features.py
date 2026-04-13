@@ -52,6 +52,8 @@ FEATURE_COLUMNS: Sequence[Tuple[str, str]] = (
     ("opponent_elo_pre", "Opponent Elo rating immediately before this match."),
     ("career_matches", "Count of matches played by player prior to this match."),
     ("career_win_pct", "Career win percentage prior to this match."),
+    ("opponent_career_matches", "Count of matches played by opponent prior to this match."),
+    ("opponent_career_win_pct", "Career win percentage for opponent prior to this match."),
     ("service_points_won_pct", "Match-level total service points won percentage."),
     ("return_points_won_pct", "Match-level total return points won percentage."),
     ("aces_per_service_game", "Aces divided by service games played in this match."),
@@ -367,6 +369,37 @@ def compute_features(
     for obs in all_matches:
         grouped_match[(obs.match_id, obs.match_date)].append(obs)
 
+    def add_rolling_features(
+        row: Dict[str, object],
+        history_entries: Sequence[HistoryEntry],
+        surface_entries: Sequence[HistoryEntry],
+        current_date: date,
+        current_surface: str,
+        *,
+        prefix: str = "",
+    ) -> None:
+        for n in match_windows:
+            recent = history_entries[-n:]
+            recent_surface = surface_entries[-n:]
+            row[f"{prefix}win_pct_last_{n}_matches"] = win_pct(recent)
+            row[f"{prefix}elo_slope_last_{n}_matches"] = linear_slope([e.elo_pre for e in recent])
+            row[f"{prefix}win_pct_slope_last_{n}_matches"] = linear_slope([float(e.is_win) for e in recent])
+            row[f"{prefix}srv_points_won_last_{n}_matches"] = average_metric(
+                recent, "service_points_won_pct"
+            )
+            row[f"{prefix}ret_points_won_last_{n}_matches"] = average_metric(
+                recent, "return_points_won_pct"
+            )
+            row[f"{prefix}surface_win_pct_last_{n}_matches"] = win_pct(recent_surface)
+
+        for days in day_windows:
+            day_recent = trailing_window(history_entries, current_date, days)
+            day_surface_recent = [e for e in day_recent if e.surface == current_surface]
+            row[f"{prefix}matches_last_{days}_days"] = len(day_recent)
+            row[f"{prefix}win_pct_last_{days}_days"] = win_pct(day_recent)
+            row[f"{prefix}elo_slope_last_{days}_days"] = linear_slope([e.elo_pre for e in day_recent])
+            row[f"{prefix}surface_win_pct_last_{days}_days"] = win_pct(day_surface_recent)
+
     for (_, _), pair in sorted(grouped_match.items(), key=lambda item: (item[0][1], item[0][0])):
         if len(pair) != 2:
             continue
@@ -388,7 +421,12 @@ def compute_features(
         ):
             history_entries = list(player_history[obs.player_id])
             surface_entries = [e for e in history_entries if e.surface == obs.surface]
+            opponent_history_entries = list(player_history[obs.opponent_id])
+            opponent_surface_entries = [
+                e for e in opponent_history_entries if e.surface == obs.surface
+            ]
             state = player_state[obs.player_id]
+            opponent_state = player_state[obs.opponent_id]
 
             row: Dict[str, object] = {
                 "match_id": obs.match_id,
@@ -402,6 +440,12 @@ def compute_features(
                 "opponent_elo_pre": opponent_elo,
                 "career_matches": state.matches_played,
                 "career_win_pct": (state.wins / state.matches_played) if state.matches_played else None,
+                "opponent_career_matches": opponent_state.matches_played,
+                "opponent_career_win_pct": (
+                    opponent_state.wins / opponent_state.matches_played
+                )
+                if opponent_state.matches_played
+                else None,
                 "service_points_won_pct": obs.service_points_won_pct,
                 "return_points_won_pct": obs.return_points_won_pct,
                 "aces_per_service_game": obs.aces_per_service_game,
@@ -409,27 +453,21 @@ def compute_features(
                 "break_points_saved_pct": obs.break_points_saved_pct,
             }
 
-            for n in match_windows:
-                recent = history_entries[-n:]
-                recent_surface = surface_entries[-n:]
-                row[f"win_pct_last_{n}_matches"] = win_pct(recent)
-                row[f"elo_slope_last_{n}_matches"] = linear_slope([e.elo_pre for e in recent])
-                row[f"win_pct_slope_last_{n}_matches"] = linear_slope([float(e.is_win) for e in recent])
-                row[f"srv_points_won_last_{n}_matches"] = average_metric(
-                    recent, "service_points_won_pct"
-                )
-                row[f"ret_points_won_last_{n}_matches"] = average_metric(
-                    recent, "return_points_won_pct"
-                )
-                row[f"surface_win_pct_last_{n}_matches"] = win_pct(recent_surface)
-
-            for days in day_windows:
-                day_recent = trailing_window(history_entries, obs.match_date, days)
-                day_surface_recent = [e for e in day_recent if e.surface == obs.surface]
-                row[f"matches_last_{days}_days"] = len(day_recent)
-                row[f"win_pct_last_{days}_days"] = win_pct(day_recent)
-                row[f"elo_slope_last_{days}_days"] = linear_slope([e.elo_pre for e in day_recent])
-                row[f"surface_win_pct_last_{days}_days"] = win_pct(day_surface_recent)
+            add_rolling_features(
+                row,
+                history_entries,
+                surface_entries,
+                obs.match_date,
+                obs.surface,
+            )
+            add_rolling_features(
+                row,
+                opponent_history_entries,
+                opponent_surface_entries,
+                obs.match_date,
+                obs.surface,
+                prefix="opponent_",
+            )
 
             rows.append(row)
 
@@ -465,12 +503,19 @@ def generate_column_docs(rows: Sequence[Dict[str, object]], path: Path) -> None:
 
     dynamic_descriptions = {
         "win_pct_last_": "Win percentage over trailing N matches before the current match.",
+        "opponent_win_pct_last_": "Opponent win percentage over trailing N matches before the current match.",
         "elo_slope_last_": "Linear slope of pre-match Elo over the specified trailing window.",
+        "opponent_elo_slope_last_": "Opponent linear slope of pre-match Elo over the specified trailing window.",
         "win_pct_slope_last_": "Linear slope of binary win indicator (1/0) over trailing matches.",
+        "opponent_win_pct_slope_last_": "Opponent linear slope of binary win indicator (1/0) over trailing matches.",
         "srv_points_won_last_": "Average service points won percent over trailing N matches.",
+        "opponent_srv_points_won_last_": "Opponent average service points won percent over trailing N matches.",
         "ret_points_won_last_": "Average return points won percent over trailing N matches.",
+        "opponent_ret_points_won_last_": "Opponent average return points won percent over trailing N matches.",
         "surface_win_pct_last_": "Win percentage for same-surface matches in trailing window.",
+        "opponent_surface_win_pct_last_": "Opponent win percentage for same-surface matches in trailing window.",
         "matches_last_": "Number of matches played during trailing day window.",
+        "opponent_matches_last_": "Number of matches opponent played during trailing day window.",
     }
     for col in dynamic_columns:
         desc = "Derived rolling/trend feature generated by window configuration."
@@ -490,7 +535,7 @@ def init_sqlite(sqlite_path: Path, columns: Sequence[str]) -> sqlite3.Connection
 
     col_defs = []
     for col in columns:
-        if col in {"event_year", "is_winner", "career_matches"} or col.startswith("matches_last_"):
+        if col in {"event_year", "is_winner", "career_matches", "opponent_career_matches"} or col.startswith("matches_last_") or col.startswith("opponent_matches_last_"):
             col_type = "INTEGER"
         elif col in {"match_id", "match_date", "surface", "player_id", "opponent_id"}:
             col_type = "TEXT"
@@ -556,7 +601,7 @@ def upsert_parquet(
 
     col_defs = []
     for col in columns:
-        if col in {"event_year", "is_winner", "career_matches"} or col.startswith("matches_last_"):
+        if col in {"event_year", "is_winner", "career_matches", "opponent_career_matches"} or col.startswith("matches_last_") or col.startswith("opponent_matches_last_"):
             col_type = "BIGINT"
         elif col in {"match_id", "match_date", "surface", "player_id", "opponent_id"}:
             col_type = "VARCHAR"
