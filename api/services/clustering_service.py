@@ -355,7 +355,8 @@ def load_cluster(req: ClusterRequest) -> ClusterCacheEntry:
             raise HTTPException(status_code=400, detail=f"Unknown attributes: {invalid}")
 
         where_sql, params = build_where(normalized["filters"], valid_cols)
-        query = f"SELECT player_id, {', '.join(f'\"{c}\"' for c in normalized['attributes'])} FROM player_features{where_sql}"
+        cols = ', '.join(f'"{c}"' for c in normalized["attributes"])
+        query = f"SELECT player_id, {cols} FROM player_features{where_sql}"
         rows = conn.execute(query, params).fetchall()
 
     player_ids, matrix = rows_to_matrix(rows, normalized["attributes"])
