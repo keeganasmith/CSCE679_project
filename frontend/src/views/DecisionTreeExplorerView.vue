@@ -20,9 +20,20 @@ const defaultTransform = ref(d3.zoomIdentity)
 const latestVisibleLayout = ref([])
 const highlightedNodeIdsForView = ref(new Set())
 const dimNonPathBranches = ref(false)
+const maxDepth = ref(8)
+const maxDepthLimit = ref(8)
+const showActiveContextOnly = ref(true)
+const expandAll = ref(false)
+const featureSearch = ref('')
+const matchedFeatureNodeIds = ref([])
+const activeMatchIndex = ref(0)
+const focusedNodeId = ref(null)
+const largeTreeOverride = ref(false)
 const explanation = ref(null)
 const predictionResponse = ref(null)
 const error = ref('')
+const LARGE_TREE_NODE_THRESHOLD = 140
+const LARGE_TREE_DEPTH_THRESHOLD = 9
 const canRequestPrediction = computed(() => Boolean(selectedMatchRow.value?.row_id))
 
 const playerNameById = computed(() =>
@@ -57,6 +68,23 @@ const schemaGuardMessage = computed(() => {
   return 'No row_id found for selected row.'
 })
 const pathSummary = computed(() => explanation.value?.path_summary ?? null)
+const treeStats = computed(() => {
+  const root = treeData()
+  if (!root) return { nodeCount: 0, maxDepth: 0 }
+  const hierarchy = d3.hierarchy(root)
+  return {
+    nodeCount: hierarchy.descendants().length,
+    maxDepth: d3.max(hierarchy.descendants(), (node) => node.depth) ?? 0
+  }
+})
+const isLargeTree = computed(
+  () =>
+    treeStats.value.nodeCount >= LARGE_TREE_NODE_THRESHOLD || treeStats.value.maxDepth >= LARGE_TREE_DEPTH_THRESHOLD
+)
+const fullExpansionBlocked = computed(() => isLargeTree.value && !largeTreeOverride.value)
+const activeMatchNodeId = computed(() =>
+  matchedFeatureNodeIds.value.length ? matchedFeatureNodeIds.value[activeMatchIndex.value] : null
+)
 const contextPanel = computed(() => {
   const row = selectedMatchRow.value
   if (!row) return null
@@ -98,11 +126,29 @@ watch(
   { immediate: true }
 )
 watch(explanation, () => {
+  const stats = treeStats.value
+  maxDepthLimit.value = Math.max(1, stats.maxDepth)
+  maxDepth.value = isLargeTree.value ? Math.min(stats.maxDepth, 6) : stats.maxDepth
+  showActiveContextOnly.value = isLargeTree.value
+  expandAll.value = false
+  featureSearch.value = ''
+  matchedFeatureNodeIds.value = []
+  activeMatchIndex.value = 0
+  focusedNodeId.value = null
+  largeTreeOverride.value = false
+  collapsed.value = new Set()
   drawTree()
   drawBars()
 })
 watch(collapsed, drawTree, { deep: true })
 watch(dimNonPathBranches, drawTree)
+watch([maxDepth, showActiveContextOnly, expandAll], () => {
+  if (expandAll.value) collapsed.value = new Set()
+  drawTree()
+})
+watch(expandAll, toggleExpandAll)
+watch(featureSearch, updateFeatureMatches)
+watch(activeMatchIndex, focusSelectedMatchNode)
 
 async function loadPrediction() {
   if (!canRequestPrediction.value) {
@@ -242,6 +288,95 @@ function activePathIds(treeRoot) {
   return pathIds
 }
 
+function contextualNodeIds(fullRoot, highlightedNodeIds) {
+  const includeIds = new Set([...highlightedNodeIds].map(String))
+  for (const node of fullRoot.descendants()) {
+    const id = String(node.data.id)
+    if (!highlightedNodeIds.has(id)) continue
+    const parent = node.parent
+    if (parent?.children?.length) {
+      for (const sibling of parent.children) {
+        includeIds.add(String(sibling.data.id))
+      }
+    }
+    if (node.children?.length) {
+      for (const child of node.children) {
+        includeIds.add(String(child.data.id))
+      }
+    }
+  }
+  return includeIds
+}
+
+function updateFeatureMatches() {
+  const query = featureSearch.value.trim().toLowerCase()
+  if (!query || !explanation.value) {
+    matchedFeatureNodeIds.value = []
+    activeMatchIndex.value = 0
+    focusedNodeId.value = null
+    return
+  }
+  const root = treeData()
+  if (!root) return
+  const nodes = d3.hierarchy(root).descendants()
+  const matches = nodes
+    .filter((node) => String(node.data.splitFeature ?? '').toLowerCase().includes(query))
+    .map((node) => String(node.data.id))
+  matchedFeatureNodeIds.value = matches
+  activeMatchIndex.value = 0
+  focusedNodeId.value = matches[0] ?? null
+  drawTree()
+}
+
+function cycleFeatureMatch(step = 1) {
+  const total = matchedFeatureNodeIds.value.length
+  if (!total) return
+  activeMatchIndex.value = (activeMatchIndex.value + step + total) % total
+}
+
+function focusSelectedMatchNode() {
+  focusedNodeId.value = activeMatchNodeId.value
+  drawTree()
+}
+
+function applyPreset(mode) {
+  if (mode === 'context') {
+    showActiveContextOnly.value = true
+    maxDepth.value = Math.min(maxDepthLimit.value, 6)
+    largeTreeOverride.value = false
+    return
+  }
+  if (mode === 'medium') {
+    showActiveContextOnly.value = false
+    maxDepth.value = Math.min(maxDepthLimit.value, 8)
+    return
+  }
+  if (mode === 'full') {
+    largeTreeOverride.value = true
+    showActiveContextOnly.value = false
+    maxDepth.value = maxDepthLimit.value
+  }
+}
+
+function toggleExpandAll() {
+  if (expandAll.value && fullExpansionBlocked.value && maxDepth.value >= maxDepthLimit.value - 1) {
+    expandAll.value = false
+    return
+  }
+  if (expandAll.value) {
+    collapsed.value = new Set()
+    return
+  }
+  const root = treeData()
+  if (!root) return
+  const internalNodeIds = d3
+    .hierarchy(root)
+    .descendants()
+    .filter((node) => node.children?.length)
+    .map((node) => node.data.id)
+  collapsed.value = new Set(internalNodeIds)
+}
+
 function drawTree() {
   const svg = d3.select(treeSvg.value)
   svg.selectAll('*').remove()
@@ -259,6 +394,16 @@ function drawTree() {
     node.data._labelLength = String(node.data.name ?? '').length
   })
   const highlightedNodeIds = activePathIds(treeRoot)
+  const queryMatchSet = new Set(matchedFeatureNodeIds.value.map(String))
+  const forcedVisible = new Set()
+  if (focusedNodeId.value) {
+    const focusedNode = fullRoot.descendants().find((node) => String(node.data.id) === String(focusedNodeId.value))
+    if (focusedNode) {
+      for (const ancestor of focusedNode.ancestors()) forcedVisible.add(String(ancestor.data.id))
+      for (const child of focusedNode.children ?? []) forcedVisible.add(String(child.data.id))
+    }
+  }
+  const contextualIds = contextualNodeIds(fullRoot, highlightedNodeIds)
   const maxLabelLength = d3.max(fullRoot.descendants(), (node) => node.data._labelLength ?? 0) ?? 0
   const siblingSpacingBase = 105 + Math.min(90, maxLabelLength * 1.2)
   const depthSpacing = 160
@@ -273,10 +418,16 @@ function drawTree() {
     })(fullRoot)
 
   const hiddenIds = collapsed.value
-  const visibleNodes = fullRoot.descendants().filter(
-    (node) => !node.ancestors().slice(0, -1).some((ancestor) => hiddenIds.has(ancestor.data.id))
-  )
+  const depthLimit = Math.max(0, Number(maxDepth.value))
+  const enforceContext = showActiveContextOnly.value || fullExpansionBlocked.value
+  const visibleNodes = fullRoot.descendants().filter((node) => {
+    const id = String(node.data.id)
+    if (node.depth > depthLimit) return false
+    if (enforceContext && !contextualIds.has(id) && !forcedVisible.has(id) && !queryMatchSet.has(id)) return false
+    return !node.ancestors().slice(0, -1).some((ancestor) => hiddenIds.has(ancestor.data.id))
+  })
   const visibleIds = new Set(visibleNodes.map((node) => node.data.id))
+  if (!visibleNodes.length) return
   const links = fullRoot
     .links()
     .filter((link) => visibleIds.has(link.source.data.id) && visibleIds.has(link.target.data.id))
@@ -379,11 +530,18 @@ function drawTree() {
     .append('circle')
     .attr('r', 7)
     .attr('fill', (d) => {
+      if (String(d.data.id) === String(focusedNodeId.value)) return '#22c55e'
       if (highlightedNodeIds.has(String(d.data.id))) return '#fdba74'
       return collapsed.value.has(d.data.id) ? '#dc2626' : '#2563eb'
     })
-    .attr('stroke', (d) => (highlightedNodeIds.has(String(d.data.id)) ? '#ea580c' : '#1e293b'))
-    .attr('stroke-width', (d) => (highlightedNodeIds.has(String(d.data.id)) ? 2.5 : 1))
+    .attr('stroke', (d) => {
+      if (String(d.data.id) === String(focusedNodeId.value)) return '#166534'
+      return highlightedNodeIds.has(String(d.data.id)) ? '#ea580c' : '#1e293b'
+    })
+    .attr('stroke-width', (d) => {
+      if (String(d.data.id) === String(focusedNodeId.value)) return 3
+      return highlightedNodeIds.has(String(d.data.id)) ? 2.5 : 1
+    })
 
   nodes
     .append('text')
@@ -584,9 +742,48 @@ function formatFixed(value, digits = 3) {
       <p>Prediction is for the selected match context (focal player vs opponent), not a general player rating.</p>
     </div>
     <h3>Collapsible tree (full model structure + active path)</h3>
+    <div class="tree-controls">
+      <label>
+        Max depth: {{ maxDepth }}
+        <input v-model.number="maxDepth" type="range" min="0" :max="maxDepthLimit" step="1" />
+      </label>
+      <label>
+        <input v-model="showActiveContextOnly" type="checkbox" />
+        Show only active path + 1-hop siblings
+      </label>
+      <label>
+        <input v-model="expandAll" type="checkbox" />
+        Expand all / Collapse all
+      </label>
+      <label>
+        Feature search
+        <input
+          v-model.trim="featureSearch"
+          type="text"
+          placeholder="Type feature name (e.g., ace_rate)"
+        />
+      </label>
+      <div class="search-actions">
+        <button type="button" :disabled="!matchedFeatureNodeIds.length" @click="cycleFeatureMatch(-1)">Prev</button>
+        <button type="button" :disabled="!matchedFeatureNodeIds.length" @click="cycleFeatureMatch(1)">Next</button>
+        <span class="subtle">
+          {{ matchedFeatureNodeIds.length ? `${activeMatchIndex + 1}/${matchedFeatureNodeIds.length}` : '0 matches' }}
+        </span>
+      </div>
+    </div>
+    <div v-if="fullExpansionBlocked" class="expansion-warning">
+      Large tree detected ({{ treeStats.nodeCount }} nodes, depth {{ treeStats.maxDepth }}).
+      Showing interpretable active-path context by default.
+      <div class="tree-actions">
+        <button type="button" @click="applyPreset('context')">Quick return: Context</button>
+        <button type="button" @click="applyPreset('medium')">Preset: Depth 8</button>
+        <button type="button" class="secondary" @click="applyPreset('full')">Show full tree anyway</button>
+      </div>
+    </div>
     <div class="tree-actions">
       <button type="button" class="secondary" @click="focusActivePath">Focus Active Path</button>
       <button type="button" @click="resetView">Reset view</button>
+      <button type="button" @click="applyPreset('context')">Return to context preset</button>
     </div>
     <div ref="treeViewport" class="tree-scroll-wrap">
       <svg ref="treeSvg" class="chart chart-tree"></svg>
