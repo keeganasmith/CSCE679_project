@@ -17,6 +17,7 @@ const collapsed = ref(new Set())
 const zoomBehavior = ref(null)
 const zoomTransform = ref(d3.zoomIdentity)
 const defaultTransform = ref(d3.zoomIdentity)
+const shouldAutoFitTree = ref(false)
 const latestVisibleLayout = ref([])
 const highlightedNodeIdsForView = ref(new Set())
 const dimNonPathBranches = ref(false)
@@ -142,7 +143,8 @@ watch(explanation, () => {
 })
 watch(collapsed, drawTree, { deep: true })
 watch(dimNonPathBranches, drawTree)
-watch([maxDepth, showActiveContextOnly, expandAll], () => {
+watch([maxDepth, showActiveContextOnly, expandAll], ([nextDepth], [prevDepth]) => {
+  if (nextDepth !== prevDepth) shouldAutoFitTree.value = true
   if (expandAll.value) collapsed.value = new Set()
   drawTree()
 })
@@ -655,8 +657,10 @@ function setupZoom(svgWidth, svgHeight, contentBounds) {
   const hasExistingTransform = zoomTransform.value.k !== 1 || zoomTransform.value.x !== 0 || zoomTransform.value.y !== 0
 
   defaultTransform.value = fitTransform(contentBounds, svgWidth, svgHeight)
-  const initialTransform = hasExistingTransform ? zoomTransform.value : defaultTransform.value
+  const shouldUseDefault = shouldAutoFitTree.value || !hasExistingTransform
+  const initialTransform = shouldUseDefault ? defaultTransform.value : zoomTransform.value
   svg.call(behavior.transform, initialTransform)
+  shouldAutoFitTree.value = false
 }
 
 function fitTransform(bounds, svgWidth, svgHeight) {
