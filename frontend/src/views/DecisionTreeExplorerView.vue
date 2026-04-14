@@ -707,7 +707,7 @@ function drawBars() {
 
   const width = 900
   const height = 280
-  const margin = { top: 20, right: 20, bottom: 32, left: 200 }
+  const margin = { top: 20, right: 20, bottom: 56, left: 200 }
   svg.attr('viewBox', `0 0 ${width} ${height}`)
 
   const x = d3.scaleLinear().domain([0, d3.max(rows, (d) => d.score) ?? 1]).nice().range([margin.left, width - margin.right])
@@ -715,6 +715,14 @@ function drawBars() {
 
   svg.append('g').attr('transform', `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x))
   svg.append('g').attr('transform', `translate(${margin.left},0)`).call(d3.axisLeft(y))
+  svg
+    .append('text')
+    .attr('x', (margin.left + width - margin.right) / 2)
+    .attr('y', height - 16)
+    .attr('text-anchor', 'middle')
+    .style('font-size', '12px')
+    .style('fill', '#334155')
+    .text('Importance score')
 
   svg
     .append('g')
