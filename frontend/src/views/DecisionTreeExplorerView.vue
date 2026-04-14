@@ -181,6 +181,30 @@ function treeData() {
     return Number.isFinite(n) ? n : null
   }
 
+  function inferLeafPrediction(node, leafMetadata) {
+    const metadata = leafMetadata && typeof leafMetadata === 'object' ? leafMetadata : {}
+    const classDistribution =
+      metadata.class_distribution ?? metadata.classDistribution ?? node.class_distribution ?? node.classDistribution ?? null
+    if (Array.isArray(classDistribution) && classDistribution.length >= 2) {
+      const loseProb = Number(classDistribution[0] ?? 0)
+      const winProb = Number(classDistribution[1] ?? 0)
+      if (Number.isFinite(loseProb) && Number.isFinite(winProb)) {
+        return winProb >= loseProb ? 1 : 0
+      }
+    }
+
+    const winProbability =
+      asNumber(metadata.leaf_win_probability ?? metadata.win_probability ?? node.leaf_win_probability ?? node.win_probability)
+    if (winProbability != null) return winProbability >= 0.5 ? 1 : 0
+
+    const explicitPrediction = metadata.predicted_outcome ?? metadata.prediction ?? metadata.class_id ?? metadata.class
+    const normalizedPrediction = Number(explicitPrediction)
+    if (Number.isFinite(normalizedPrediction) && (normalizedPrediction === 0 || normalizedPrediction === 1)) {
+      return normalizedPrediction
+    }
+    return null
+  }
+
   function nodeId(node, fallback) {
     const rawId =
       node.id ?? node.node_id ?? node.nodeId ?? node.tree_id ?? node.treeId ?? node.idx ?? node.index ?? fallback
@@ -197,6 +221,7 @@ function treeData() {
     const leftRaw = node.left_child ?? node.left ?? node.leftChild ?? null
     const rightRaw = node.right_child ?? node.right ?? node.rightChild ?? null
 
+    const leafPrediction = inferLeafPrediction(node, leafMetadata)
     const left = buildNode(leftRaw, `${id}-left`)
     const right = buildNode(rightRaw, `${id}-right`)
     const children = [left, right].filter(Boolean)
@@ -212,6 +237,7 @@ function treeData() {
       splitFeature,
       threshold,
       leafMetadata,
+      leafPrediction,
       isLeaf,
       children
     }
@@ -233,6 +259,7 @@ function treeData() {
       const leftId = node.left_child_id ?? node.left_child ?? node.left ?? node.leftChild ?? null
       const rightId = node.right_child_id ?? node.right_child ?? node.right ?? node.rightChild ?? null
       const leafMetadata = node.leaf_metadata ?? node.leaf ?? node.leaf_info ?? node.leafInfo ?? null
+      const leafPrediction = inferLeafPrediction(node, leafMetadata)
       const isLeaf =
         Boolean(node.is_leaf) ||
         (Number(leftId) < 0 && Number(rightId) < 0) ||
@@ -243,6 +270,7 @@ function treeData() {
         splitFeature,
         threshold,
         leafMetadata,
+        leafPrediction,
         isLeaf,
         leftId: Number.isFinite(Number(leftId)) && Number(leftId) >= 0 ? String(leftId) : null,
         rightId: Number.isFinite(Number(rightId)) && Number(rightId) >= 0 ? String(rightId) : null,
@@ -530,6 +558,7 @@ function drawTree() {
     .append('circle')
     .attr('r', 7)
     .attr('fill', (d) => {
+      if (d.data.isLeaf && d.data.leafPrediction != null) return d.data.leafPrediction === 1 ? '#16a34a' : '#dc2626'
       if (String(d.data.id) === String(focusedNodeId.value)) return '#22c55e'
       if (highlightedNodeIds.has(String(d.data.id))) return '#fdba74'
       return collapsed.value.has(d.data.id) ? '#dc2626' : '#2563eb'
