@@ -67,6 +67,12 @@ const normalizeToPercent = (value) => {
   return numeric <= 1 ? numeric * 100 : numeric
 }
 
+const normalizeToNumber = (value) => {
+  const numeric = Number(value ?? 0)
+  if (!Number.isFinite(numeric)) return 0
+  return numeric
+}
+
 const selectedWindowLabel = computed(() => {
   if (!hasBrushWindow.value) return 'full timeline'
   const [start, end] = domain.value
@@ -125,7 +131,7 @@ async function loadSeries() {
   try {
     const [elo, ace, win] = await Promise.all([
       apiGet(`/players/${encodeURIComponent(selectedPlayer.value)}/metrics/timeseries`, { metric: 'elo', limit: 500 }),
-      apiGet(`/players/${encodeURIComponent(selectedPlayer.value)}/metrics/timeseries`, { metric: 'ace_pct', limit: 500 }),
+      apiGet(`/players/${encodeURIComponent(selectedPlayer.value)}/metrics/timeseries`, { metric: 'aces_per_service_game', limit: 500 }),
       apiGet(`/players/${encodeURIComponent(selectedPlayer.value)}/metrics/timeseries`, { metric: 'win_pct', limit: 500 })
     ])
 
@@ -135,7 +141,7 @@ async function loadSeries() {
     }
     for (const point of ace.points) {
       const rec = map.get(point.match_date) ?? { date: new Date(point.match_date), elo: null, ace: null, win: null }
-      rec.ace = normalizeToPercent(point.value)
+      rec.ace = normalizeToNumber(point.value)
       map.set(point.match_date, rec)
     }
     for (const point of win.points) {
@@ -198,7 +204,7 @@ function drawChart() {
   const legendItems = [
     { label: 'Elo', color: '#1d4ed8' },
     { label: 'Win %', color: '#059669' },
-    { label: 'Ace %', color: '#f97316' }
+    { label: 'Aces / Service Game', color: '#f97316' }
   ]
 
   const legend = svg.append('g').attr('transform', `translate(${margin.left}, ${height - margin.bottom + 30})`)
@@ -207,7 +213,7 @@ function drawChart() {
   legendEntry.append('text').attr('x', 30).attr('y', 4).attr('font-size', 12).text((d) => d.label)
 
   svg.append('text').attr('x', margin.left).attr('y', margin.top - 8).text('Elo')
-  svg.append('text').attr('x', width - margin.right - 70).attr('y', margin.top - 8).text('Win% / Ace%')
+  svg.append('text').attr('x', width - margin.right - 170).attr('y', margin.top - 8).text('Win% / Aces per Service Game')
 }
 
 function drawBrush() {
