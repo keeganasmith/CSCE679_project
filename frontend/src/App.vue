@@ -546,46 +546,48 @@ function reconcileStoryStateAfterClustering() {
     <section v-if="loading" class="panel">Loading data from API...</section>
     <section v-else-if="error" class="panel error-text">{{ error }}</section>
     <section v-else-if="!clusterResult" class="panel">Select clustering settings and run clustering to load views.</section>
+    <template v-else>
+      <ClusterOverviewView
+        :cluster-result="clusterResult"
+        :players="enrichedPlayers"
+        :cluster-players="clusterPlayers"
+        :clustering-config="activeClusteringConfig"
+        :projection-metadata="projectionMetadata"
+        :selected-cluster-id="selectedClusterId"
+        :active-story-step="activeStoryStep"
+        :cluster-request-id="clusterRequestId"
+        @update:selected-cluster-id="selectedClusterId = $event"
+        @update:active-story-step="activeStoryStep = $event"
+      />
 
-    <ClusterOverviewView
-      v-else-if="activeTab === 'overview'"
-      :cluster-result="clusterResult"
-      :players="enrichedPlayers"
-      :cluster-players="clusterPlayers"
-      :clustering-config="activeClusteringConfig"
-      :projection-metadata="projectionMetadata"
-      :selected-cluster-id="selectedClusterId"
-      :active-story-step="activeStoryStep"
-      :cluster-request-id="clusterRequestId"
-      @update:selected-cluster-id="selectedClusterId = $event"
-      @update:active-story-step="activeStoryStep = $event"
-    />
+      <details class="panel" :open="activeTab === 'performance'">
+        <summary><strong>Player Performance Trends</strong></summary>
+        <PlayerPerformanceView
+          :players="enrichedPlayers"
+          :selected-player-id="selectedPlayerId"
+          :active-story-step="activeStoryStep"
+          :cluster-request-id="clusterRequestId"
+          @update:selected-player-id="selectedPlayerId = $event"
+          @update:active-story-step="activeStoryStep = $event"
+          @select-match-context="applyMatchContextSelection"
+        />
+      </details>
 
-
-    <PlayerPerformanceView
-      v-else-if="activeTab === 'performance'"
-      :players="enrichedPlayers"
-      :selected-player-id="selectedPlayerId"
-      :active-story-step="activeStoryStep"
-      :cluster-request-id="clusterRequestId"
-      @update:selected-player-id="selectedPlayerId = $event"
-      @update:active-story-step="activeStoryStep = $event"
-      @select-match-context="applyMatchContextSelection"
-    />
-
-
-    <DecisionTreeExplorerView
-      v-else
-      :players="enrichedPlayers"
-      :feature-columns="predictorFeatureColumns"
-      :selected-player-id="selectedPlayerId"
-      :selected-match-key="selectedMatchKey"
-      :active-story-step="activeStoryStep"
-      :cluster-request-id="clusterRequestId"
-      @update:selected-player-id="selectedPlayerId = $event"
-      @update:selected-match-key="selectedMatchKey = $event"
-      @update:active-story-step="activeStoryStep = $event"
-      @update:prediction-context="applyExplainerContext"
-    />
+      <details class="panel" :open="activeTab === 'tree'">
+        <summary><strong>Match Outcome Explainer</strong></summary>
+        <DecisionTreeExplorerView
+          :players="enrichedPlayers"
+          :feature-columns="predictorFeatureColumns"
+          :selected-player-id="selectedPlayerId"
+          :selected-match-key="selectedMatchKey"
+          :active-story-step="activeStoryStep"
+          :cluster-request-id="clusterRequestId"
+          @update:selected-player-id="selectedPlayerId = $event"
+          @update:selected-match-key="selectedMatchKey = $event"
+          @update:active-story-step="activeStoryStep = $event"
+          @update:prediction-context="applyExplainerContext"
+        />
+      </details>
+    </template>
   </main>
 </template>
