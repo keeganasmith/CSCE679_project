@@ -131,25 +131,65 @@ const activeClusteringConfig = computed(() => ({
 
 const canRunClustering = computed(() => selectedAttributes.value.length > 0)
 
+function normalizePlayerId(playerId) {
+  const normalized = String(playerId ?? '').trim()
+  if (/^\d+\.0$/.test(normalized)) {
+    return normalized.slice(0, -2)
+  }
+  return normalized
+}
+
 const enrichedPlayers = computed(() => {
   const projectionPoints = clusterResult.value?.projection?.points ?? []
   const projectionByPlayer = Object.fromEntries(
-    projectionPoints.map((point) => [point.player_id, point])
+    projectionPoints.map((point) => [normalizePlayerId(point.player_id), point])
   )
 
   return playerRows.value
-    .filter((row) => clusterByPlayer.value[row.player_id] !== undefined)
-    .map((row) => ({
-      ...row,
-      cluster_id: clusterByPlayer.value[row.player_id],
-      pc1: Number(projectionByPlayer[row.player_id]?.pc1 ?? 0),
-      pc2: Number(projectionByPlayer[row.player_id]?.pc2 ?? 0)
-    }))
+    .map((row) => {
+      const normalizedPlayerId = normalizePlayerId(row.player_id)
+      const clusterId = clusterByPlayer.value[normalizedPlayerId]
+      if (clusterId === undefined) return null
+
+      return {
+        ...row,
+        player_id: normalizedPlayerId,
+        cluster_id: clusterId,
+        pc1: Number(projectionByPlayer[normalizedPlayerId]?.pc1 ?? 0),
+        pc2: Number(projectionByPlayer[normalizedPlayerId]?.pc2 ?? 0)
+      }
+    })
+    .filter(Boolean)
+})
+
+const overviewPlayers = computed(() => {
+  const projectionPoints = clusterResult.value?.projection?.points ?? []
+  const statsByPlayer = Object.fromEntries(
+    enrichedPlayers.value.map((player) => [normalizePlayerId(player.player_id), player])
+  )
+
+  return projectionPoints
+    .map((point) => {
+      const normalizedPlayerId = normalizePlayerId(point.player_id)
+      const clusterId = clusterByPlayer.value[normalizedPlayerId]
+      if (clusterId === undefined) return null
+
+      const stats = statsByPlayer[normalizedPlayerId]
+      return {
+        ...stats,
+        player_id: normalizedPlayerId,
+        player_name: point.player_name ?? stats?.player_name ?? normalizedPlayerId,
+        cluster_id: clusterId,
+        pc1: Number(point.pc1 ?? 0),
+        pc2: Number(point.pc2 ?? 0)
+      }
+    })
+    .filter(Boolean)
 })
 
 
 const selectedClusterSummary = computed(() => {
-  const players = enrichedPlayers.value
+  const players = overviewPlayers.value
   if (!players.length) {
     return {
       clusterLabel: 'All clusters',
@@ -365,7 +405,9 @@ async function runClustering() {
     ])
 
     clusterPlayers.value = clusterPlayersResp
-    clusterByPlayer.value = Object.fromEntries(clusterPlayersResp.map((p) => [p.player_id, p.cluster_id]))
+    clusterByPlayer.value = Object.fromEntries(
+      clusterPlayersResp.map((p) => [normalizePlayerId(p.player_id), p.cluster_id])
+    )
     playerRows.value = playersResp.players
     reconcileStoryStateAfterClustering()
   } catch (err) {
@@ -610,7 +652,7 @@ function reconcileStoryStateAfterClustering() {
     <template v-else>
       <ClusterOverviewView
         :cluster-result="clusterResult"
-        :players="enrichedPlayers"
+        :players="overviewPlayers"
         :cluster-players="clusterPlayers"
         :clustering-config="activeClusteringConfig"
         :projection-metadata="projectionMetadata"
