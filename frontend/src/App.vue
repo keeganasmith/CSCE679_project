@@ -48,8 +48,8 @@ const minSamples = ref(5)
 const linkage = ref('average')
 const distanceMetric = ref('euclidean')
 const scaling = ref('zscore')
-const MAX_CLUSTER_PLAYERS_PAGE_SIZE = 500
-const MAX_PLAYER_QUERY_LIMIT = 2000
+const MAX_CLUSTER_PLAYERS_PAGE_SIZE = 4000
+const MAX_PLAYER_QUERY_LIMIT = 4000
 
 const simplePresetOptions = {
   balanced: {

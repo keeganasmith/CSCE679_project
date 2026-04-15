@@ -79,7 +79,7 @@
     "leaf_id": 74,
     "sample_count": 3460,
     "predicted_class": 1,
-    "win_probability": 0.5680194617601373,
+    "win_probability": 0.5680194617601374,
     "rules": [
       {
         "feature": "matches_last_30_days_diff",
@@ -231,7 +231,7 @@
     "leaf_id": 54,
     "sample_count": 1496,
     "predicted_class": 0,
-    "win_probability": 0.13586507002788206,
+    "win_probability": 0.1358650700278821,
     "rules": [
       {
         "feature": "matches_last_30_days_diff",
