@@ -1,62 +1,29 @@
 [
   {
-    "leaf_id": 50,
-    "sample_count": 4344,
-    "predicted_class": 1,
-    "win_probability": 0.8551133490860137,
-    "rules": [
-      {
-        "feature": "matches_last_30_days",
-        "operator": ">",
-        "threshold": 0.5
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1696.4849243164062
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1525.3839111328125
-      },
-      {
-        "feature": "matches_last_30_days",
-        "operator": "<=",
-        "threshold": 2.5
-      },
-      {
-        "feature": "surface_win_pct_last_30_days",
-        "operator": "<=",
-        "threshold": 0.1666666716337204
-      },
-      {
-        "feature": "event_year",
-        "operator": ">",
-        "threshold": 2007.5
-      }
-    ]
-  },
-  {
-    "leaf_id": 13,
-    "sample_count": 4018,
+    "leaf_id": 40,
+    "sample_count": 12304,
     "predicted_class": 0,
-    "win_probability": 0.06656711580563524,
+    "win_probability": 0.014320295589064898,
     "rules": [
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": "<=",
+        "threshold": -0.5
+      },
+      {
+        "feature": "win_pct_last_30_days_diff",
+        "operator": ">",
+        "threshold": -0.046536797657608986
+      },
       {
         "feature": "matches_last_30_days",
         "operator": "<=",
         "threshold": 0.5
       },
       {
-        "feature": "opponent_elo_pre",
+        "feature": "opponent_win_pct_last_30_days",
         "operator": "<=",
-        "threshold": 1502.181884765625
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1499.9987182617188
+        "threshold": 0.9705882370471954
       },
       {
         "feature": "event_year",
@@ -64,242 +31,275 @@
         "threshold": 2006.5
       },
       {
-        "feature": "matches_last_365_days",
+        "feature": "srv_points_won_last_10_matches_diff",
         "operator": "<=",
-        "threshold": 19.5
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1498.0941162109375
+        "threshold": 11.237152099609375
       }
     ]
   },
   {
-    "leaf_id": 33,
-    "sample_count": 3440,
-    "predicted_class": 0,
-    "win_probability": 0.014360734089139725,
-    "rules": [
-      {
-        "feature": "matches_last_30_days",
-        "operator": "<=",
-        "threshold": 0.5
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": ">",
-        "threshold": 1502.181884765625
-      },
-      {
-        "feature": "elo_pre",
-        "operator": "<=",
-        "threshold": 1745.9544677734375
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": ">",
-        "threshold": 1558.7775268554688
-      },
-      {
-        "feature": "elo_pre",
-        "operator": "<=",
-        "threshold": 1551.5382690429688
-      },
-      {
-        "feature": "matches_last_365_days",
-        "operator": ">",
-        "threshold": 1.5
-      }
-    ]
-  },
-  {
-    "leaf_id": 71,
-    "sample_count": 3418,
+    "leaf_id": 87,
+    "sample_count": 10173,
     "predicted_class": 1,
-    "win_probability": 0.7676685342526937,
+    "win_probability": 0.98810818601169,
     "rules": [
       {
-        "feature": "matches_last_30_days",
+        "feature": "matches_last_30_days_diff",
+        "operator": ">",
+        "threshold": -0.5
+      },
+      {
+        "feature": "matches_last_30_days_diff",
         "operator": ">",
         "threshold": 0.5
       },
       {
-        "feature": "opponent_elo_pre",
+        "feature": "win_pct_last_30_days_diff",
         "operator": "<=",
-        "threshold": 1696.4849243164062
+        "threshold": 0.0176046178676188
       },
       {
-        "feature": "opponent_elo_pre",
-        "operator": ">",
-        "threshold": 1525.3839111328125
-      },
-      {
-        "feature": "matches_last_30_days",
-        "operator": ">",
-        "threshold": 2.5
-      },
-      {
-        "feature": "elo_pre",
+        "feature": "opponent_matches_last_30_days",
         "operator": "<=",
-        "threshold": 1694.239990234375
+        "threshold": 0.5
       },
       {
         "feature": "win_pct_last_30_days",
         "operator": "<=",
-        "threshold": 0.6547619104385376
-      }
-    ]
-  },
-  {
-    "leaf_id": 64,
-    "sample_count": 3412,
-    "predicted_class": 1,
-    "win_probability": 0.7176868552549381,
-    "rules": [
-      {
-        "feature": "matches_last_30_days",
-        "operator": ">",
-        "threshold": 0.5
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1696.4849243164062
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": ">",
-        "threshold": 1525.3839111328125
-      },
-      {
-        "feature": "matches_last_30_days",
-        "operator": "<=",
-        "threshold": 2.5
-      },
-      {
-        "feature": "surface_win_pct_last_30_days",
-        "operator": "<=",
-        "threshold": 0.1666666716337204
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1621.8637084960938
-      }
-    ]
-  },
-  {
-    "leaf_id": 59,
-    "sample_count": 3271,
-    "predicted_class": 1,
-    "win_probability": 0.9079132644026134,
-    "rules": [
-      {
-        "feature": "matches_last_30_days",
-        "operator": ">",
-        "threshold": 0.5
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1696.4849243164062
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1525.3839111328125
-      },
-      {
-        "feature": "matches_last_30_days",
-        "operator": ">",
-        "threshold": 2.5
-      },
-      {
-        "feature": "surface_win_pct_last_30_days",
-        "operator": ">",
-        "threshold": 0.3541666716337204
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1504.6307983398438
-      }
-    ]
-  },
-  {
-    "leaf_id": 28,
-    "sample_count": 2571,
-    "predicted_class": 0,
-    "win_probability": 0.03780713397627266,
-    "rules": [
-      {
-        "feature": "matches_last_30_days",
-        "operator": "<=",
-        "threshold": 0.5
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": ">",
-        "threshold": 1502.181884765625
-      },
-      {
-        "feature": "elo_pre",
-        "operator": "<=",
-        "threshold": 1745.9544677734375
-      },
-      {
-        "feature": "opponent_elo_pre",
-        "operator": "<=",
-        "threshold": 1558.7775268554688
+        "threshold": 0.9705882370471954
       },
       {
         "feature": "event_year",
         "operator": ">",
         "threshold": 2007.5
-      },
-      {
-        "feature": "elo_pre",
-        "operator": "<=",
-        "threshold": 1591.2677612304688
       }
     ]
   },
   {
-    "leaf_id": 53,
-    "sample_count": 2291,
+    "leaf_id": 74,
+    "sample_count": 3460,
     "predicted_class": 1,
-    "win_probability": 0.8110940157693081,
+    "win_probability": 0.5680194617601373,
     "rules": [
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": ">",
+        "threshold": -0.5
+      },
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": "<=",
+        "threshold": 0.5
+      },
+      {
+        "feature": "win_pct_last_30_days_diff",
+        "operator": ">",
+        "threshold": -0.18333333730697632
+      },
+      {
+        "feature": "win_pct_last_30_days_diff",
+        "operator": "<=",
+        "threshold": 0.1180555559694767
+      },
+      {
+        "feature": "elo_pre_diff",
+        "operator": ">",
+        "threshold": -171.7178955078125
+      },
+      {
+        "feature": "career_matches",
+        "operator": ">",
+        "threshold": 0.5
+      }
+    ]
+  },
+  {
+    "leaf_id": 95,
+    "sample_count": 1983,
+    "predicted_class": 1,
+    "win_probability": 0.9023429739091692,
+    "rules": [
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": ">",
+        "threshold": -0.5
+      },
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": ">",
+        "threshold": 0.5
+      },
+      {
+        "feature": "win_pct_last_30_days_diff",
+        "operator": "<=",
+        "threshold": 0.0176046178676188
+      },
+      {
+        "feature": "opponent_matches_last_30_days",
+        "operator": ">",
+        "threshold": 0.5
+      },
+      {
+        "feature": "elo_pre_diff",
+        "operator": ">",
+        "threshold": -237.05770874023438
+      },
+      {
+        "feature": "opponent_surface_win_pct_last_90_days",
+        "operator": ">",
+        "threshold": 0.0833333358168602
+      }
+    ]
+  },
+  {
+    "leaf_id": 86,
+    "sample_count": 1844,
+    "predicted_class": 1,
+    "win_probability": 0.9641101186333044,
+    "rules": [
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": ">",
+        "threshold": -0.5
+      },
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": ">",
+        "threshold": 0.5
+      },
+      {
+        "feature": "win_pct_last_30_days_diff",
+        "operator": "<=",
+        "threshold": 0.0176046178676188
+      },
+      {
+        "feature": "opponent_matches_last_30_days",
+        "operator": "<=",
+        "threshold": 0.5
+      },
+      {
+        "feature": "win_pct_last_30_days",
+        "operator": "<=",
+        "threshold": 0.9705882370471954
+      },
+      {
+        "feature": "event_year",
+        "operator": "<=",
+        "threshold": 2007.5
+      }
+    ]
+  },
+  {
+    "leaf_id": 106,
+    "sample_count": 1539,
+    "predicted_class": 1,
+    "win_probability": 0.8117641654939977,
+    "rules": [
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": ">",
+        "threshold": -0.5
+      },
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": ">",
+        "threshold": 0.5
+      },
+      {
+        "feature": "win_pct_last_30_days_diff",
+        "operator": ">",
+        "threshold": 0.0176046178676188
+      },
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": ">",
+        "threshold": 1.5
+      },
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": "<=",
+        "threshold": 3.5
+      },
+      {
+        "feature": "win_pct_last_30_days",
+        "operator": "<=",
+        "threshold": 0.6515151560306549
+      }
+    ]
+  },
+  {
+    "leaf_id": 54,
+    "sample_count": 1496,
+    "predicted_class": 0,
+    "win_probability": 0.13586507002788206,
+    "rules": [
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": "<=",
+        "threshold": -0.5
+      },
+      {
+        "feature": "win_pct_last_30_days_diff",
+        "operator": ">",
+        "threshold": -0.046536797657608986
+      },
       {
         "feature": "matches_last_30_days",
         "operator": ">",
         "threshold": 0.5
       },
       {
+        "feature": "surface_win_pct_last_90_days",
+        "operator": ">",
+        "threshold": 0.0833333358168602
+      },
+      {
+        "feature": "elo_pre_diff",
+        "operator": "<=",
+        "threshold": 143.58907318115234
+      },
+      {
+        "feature": "surface_win_pct_last_90_days",
+        "operator": ">",
+        "threshold": 0.47727273404598236
+      }
+    ]
+  },
+  {
+    "leaf_id": 6,
+    "sample_count": 1389,
+    "predicted_class": 0,
+    "win_probability": 0.16594717595890518,
+    "rules": [
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": "<=",
+        "threshold": -0.5
+      },
+      {
+        "feature": "win_pct_last_30_days_diff",
+        "operator": "<=",
+        "threshold": -0.046536797657608986
+      },
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": "<=",
+        "threshold": -2.5
+      },
+      {
+        "feature": "matches_last_30_days_diff",
+        "operator": "<=",
+        "threshold": -3.5
+      },
+      {
         "feature": "opponent_elo_pre",
         "operator": "<=",
-        "threshold": 1696.4849243164062
+        "threshold": 1736.779541015625
       },
       {
-        "feature": "opponent_elo_pre",
+        "feature": "opponent_win_pct_last_30_days",
         "operator": "<=",
-        "threshold": 1525.3839111328125
-      },
-      {
-        "feature": "matches_last_30_days",
-        "operator": "<=",
-        "threshold": 2.5
-      },
-      {
-        "feature": "surface_win_pct_last_30_days",
-        "operator": ">",
-        "threshold": 0.1666666716337204
-      },
-      {
-        "feature": "surface_win_pct_last_30_days",
-        "operator": ">",
-        "threshold": 0.4166666716337204
+        "threshold": 0.7928571403026581
       }
     ]
   }

@@ -1,54 +1,110 @@
 [
   {
-    "feature": "matches_last_30_days",
-    "importance": 0.6846778857678368
+    "feature": "matches_last_30_days_diff",
+    "importance": 0.8538899928146054
   },
   {
-    "feature": "opponent_elo_pre",
-    "importance": 0.17453729097331627
+    "feature": "win_pct_last_30_days_diff",
+    "importance": 0.09660563282386553
   },
   {
-    "feature": "surface_win_pct_last_30_days",
-    "importance": 0.08850150969141307
+    "feature": "opponent_win_pct_last_30_days",
+    "importance": 0.009413815120703273
   },
   {
-    "feature": "elo_pre",
-    "importance": 0.020669880262999162
+    "feature": "elo_pre_diff",
+    "importance": 0.008122644565773001
   },
   {
     "feature": "win_pct_last_30_days",
-    "importance": 0.013753038317236439
+    "importance": 0.006910703229060779
   },
   {
     "feature": "surface_win_pct_last_90_days",
-    "importance": 0.007779342991262444
+    "importance": 0.00549659774462352
   },
   {
-    "feature": "event_year",
-    "importance": 0.005734428567835395
+    "feature": "matches_last_30_days",
+    "importance": 0.004391163419189299
   },
   {
-    "feature": "matches_last_90_days",
-    "importance": 0.002101855665174081
+    "feature": "opponent_matches_last_30_days",
+    "importance": 0.003485083407864866
   },
   {
     "feature": "career_matches",
-    "importance": 0.0009396732339124861
+    "importance": 0.0022686043393659833
+  },
+  {
+    "feature": "opponent_elo_pre",
+    "importance": 0.0022224300777438782
+  },
+  {
+    "feature": "opponent_career_win_pct",
+    "importance": 0.0015623413175518519
+  },
+  {
+    "feature": "opponent_surface_win_pct_last_30_days",
+    "importance": 0.0011379867285678448
+  },
+  {
+    "feature": "opponent_surface_win_pct_last_90_days",
+    "importance": 0.0008166548629015401
+  },
+  {
+    "feature": "surface_win_pct_last_90_days_diff",
+    "importance": 0.0006445691532688718
+  },
+  {
+    "feature": "win_pct_last_365_days",
+    "importance": 0.0005420382786478453
   },
   {
     "feature": "matches_last_365_days",
-    "importance": 0.0006664288746629849
+    "importance": 0.0005063620192115928
   },
   {
-    "feature": "win_pct_slope_last_10_matches",
-    "importance": 0.0002436121092892856
+    "feature": "event_year",
+    "importance": 0.0003296331447492596
   },
   {
-    "feature": "surface_win_pct_last_365_days",
-    "importance": 0.000197829514067744
+    "feature": "opponent_elo_slope_last_30_days",
+    "importance": 0.0003091605636238334
   },
   {
-    "feature": "elo_slope_last_365_days",
-    "importance": 0.00019722403099365731
+    "feature": "opponent_matches_last_365_days",
+    "importance": 0.00029251358130178145
+  },
+  {
+    "feature": "win_pct_slope_last_5_matches_diff",
+    "importance": 0.00025063500908714583
+  },
+  {
+    "feature": "ret_points_won_last_20_matches",
+    "importance": 0.00017204845843214118
+  },
+  {
+    "feature": "elo_slope_last_30_days",
+    "importance": 0.00013650515312501468
+  },
+  {
+    "feature": "opponent_ret_points_won_last_20_matches",
+    "importance": 0.00011731890558384364
+  },
+  {
+    "feature": "win_pct_slope_last_10_matches_diff",
+    "importance": 0.00010861150358608405
+  },
+  {
+    "feature": "opponent_elo_slope_last_10_matches",
+    "importance": 9.17416378471284e-05
+  },
+  {
+    "feature": "srv_points_won_last_10_matches_diff",
+    "importance": 9.023426399679521e-05
+  },
+  {
+    "feature": "opponent_career_matches",
+    "importance": 8.49778757218452e-05
   }
 ]
