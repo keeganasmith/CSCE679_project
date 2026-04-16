@@ -104,17 +104,12 @@ const activeMatchNodeId = computed(() =>
   matchedFeatureNodeIds.value.length ? matchedFeatureNodeIds.value[activeMatchIndex.value] : null
 )
 
-
 function emitPredictionContext() {
   const row = selectedMatchRow.value
   if (!row) {
-    emit('update:prediction-context', {
-      matchLabel: 'No match selected',
-      winProbability: null
-    })
+    emit('update:prediction-context', { matchLabel: 'No match selected', winProbability: null })
     return
   }
-
   const matchLabel = `${row.match_date ?? '-'} vs ${row.opponent_name ?? displayPlayerName(row.opponent_id) ?? '-'}`
   emit('update:prediction-context', {
     matchLabel,
@@ -124,7 +119,6 @@ function emitPredictionContext() {
 const contextPanel = computed(() => {
   const row = selectedMatchRow.value
   if (!row) return null
-
   const usedDefaultMedians = predictionResponse.value?.used_default_medians_for
   return {
     player_id: row.player_id ?? '-',
@@ -148,36 +142,20 @@ onMounted(async () => {
 watch(selectedPlayer, () => {
   opponentSearch.value = ''
   const keys = playerMatchRows.value.map((row) => matchKeyForRow(row))
-  if (!keys.length) {
-    selectedMatchKey.value = ''
-    return
-  }
-  if (!keys.includes(selectedMatchKey.value)) {
-    selectedMatchKey.value = keys[0]
-  }
+  if (!keys.length) { selectedMatchKey.value = ''; return }
+  if (!keys.includes(selectedMatchKey.value)) { selectedMatchKey.value = keys[0] }
 })
 watch(
   matchOptions,
   (options) => {
     const optionKeys = options.map((option) => option.key)
-    if (!optionKeys.length) {
-      if (selectedMatchKey.value) selectedMatchKey.value = ''
-      return
-    }
-    if (!optionKeys.includes(selectedMatchKey.value)) {
-      selectedMatchKey.value = optionKeys[0]
-    }
+    if (!optionKeys.length) { if (selectedMatchKey.value) selectedMatchKey.value = ''; return }
+    if (!optionKeys.includes(selectedMatchKey.value)) { selectedMatchKey.value = optionKeys[0] }
   },
   { immediate: true }
 )
 watch(selectedMatchKey, loadPrediction)
-watch(
-  [selectedMatchRow, predictionResponse],
-  () => {
-    emitPredictionContext()
-  },
-  { immediate: true }
-)
+watch([selectedMatchRow, predictionResponse], () => { emitPredictionContext() }, { immediate: true })
 watch(
   canRequestPrediction,
   (available) => {
@@ -214,14 +192,9 @@ watch(featureSearch, updateFeatureMatches)
 watch(activeMatchIndex, focusSelectedMatchNode)
 
 async function loadPrediction() {
-  if (!canRequestPrediction.value) {
-    error.value = 'No row_id found for selected row.'
-    return
-  }
-
+  if (!canRequestPrediction.value) { error.value = 'No row_id found for selected row.'; return }
   const row = selectedMatchRow.value
   if (!row) return
-
   error.value = ''
   try {
     const resp = await apiPost('/predict', { row_id: Number(row.row_id), top_k_features: 8 })
@@ -251,15 +224,11 @@ function treeData() {
     if (Array.isArray(classDistribution) && classDistribution.length >= 2) {
       const loseProb = Number(classDistribution[0] ?? 0)
       const winProb = Number(classDistribution[1] ?? 0)
-      if (Number.isFinite(loseProb) && Number.isFinite(winProb)) {
-        return winProb >= loseProb ? 1 : 0
-      }
+      if (Number.isFinite(loseProb) && Number.isFinite(winProb)) { return winProb >= loseProb ? 1 : 0 }
     }
-
     const winProbability =
       asNumber(metadata.leaf_win_probability ?? metadata.win_probability ?? node.leaf_win_probability ?? node.win_probability)
     if (winProbability != null) return winProbability >= 0.5 ? 1 : 0
-
     const explicitPrediction = metadata.predicted_outcome ?? metadata.prediction ?? metadata.class_id ?? metadata.class
     const normalizedPrediction = Number(explicitPrediction)
     if (Number.isFinite(normalizedPrediction) && (normalizedPrediction === 0 || normalizedPrediction === 1)) {
@@ -276,34 +245,21 @@ function treeData() {
 
   function buildNode(node, fallback = 'root') {
     if (!node || typeof node !== 'object') return null
-
     const id = nodeId(node, fallback)
     const splitFeature = node.split_feature ?? node.feature ?? node.feature_name ?? node.splitFeature ?? null
     const threshold = asNumber(node.threshold ?? node.split_threshold ?? node.splitThreshold)
     const leafMetadata = node.leaf_metadata ?? node.leaf ?? node.leaf_info ?? node.leafInfo ?? null
     const leftRaw = node.left_child ?? node.left ?? node.leftChild ?? null
     const rightRaw = node.right_child ?? node.right ?? node.rightChild ?? null
-
     const leafPrediction = inferLeafPrediction(node, leafMetadata)
     const left = buildNode(leftRaw, `${id}-left`)
     const right = buildNode(rightRaw, `${id}-right`)
     const children = [left, right].filter(Boolean)
     const isLeaf = Boolean(node.is_leaf) || (!left && !right)
-
     const name = isLeaf
       ? `Leaf ${leafMetadata?.leaf_id ?? leafMetadata?.leafId ?? id}`
       : `${splitFeature ?? 'feature'} <= ${(threshold ?? 0).toFixed(3)}`
-
-    return {
-      id,
-      name,
-      splitFeature,
-      threshold,
-      leafMetadata,
-      leafPrediction,
-      isLeaf,
-      children
-    }
+    return { id, name, splitFeature, threshold, leafMetadata, leafPrediction, isLeaf, children }
   }
 
   if (Array.isArray(payload)) {
@@ -311,13 +267,8 @@ function treeData() {
     for (const node of payload) {
       const id = nodeId(node, nodesById.size)
       const splitFeature =
-        node.split_feature ??
-        node.feature ??
-        node.feature_name ??
-        node.splitFeature ??
-        node.split_feature_name ??
-        node.splitFeatureName ??
-        null
+        node.split_feature ?? node.feature ?? node.feature_name ?? node.splitFeature ??
+        node.split_feature_name ?? node.splitFeatureName ?? null
       const threshold = asNumber(node.threshold ?? node.split_threshold ?? node.splitThreshold)
       const leftId = node.left_child_id ?? node.left_child ?? node.left ?? node.leftChild ?? null
       const rightId = node.right_child_id ?? node.right_child ?? node.right ?? node.rightChild ?? null
@@ -327,32 +278,22 @@ function treeData() {
         Boolean(node.is_leaf) ||
         (Number(leftId) < 0 && Number(rightId) < 0) ||
         (!Number.isFinite(Number(leftId)) && !Number.isFinite(Number(rightId)))
-
       nodesById.set(String(id), {
-        id: String(id),
-        splitFeature,
-        threshold,
-        leafMetadata,
-        leafPrediction,
-        isLeaf,
+        id: String(id), splitFeature, threshold, leafMetadata, leafPrediction, isLeaf,
         leftId: Number.isFinite(Number(leftId)) && Number(leftId) >= 0 ? String(leftId) : null,
         rightId: Number.isFinite(Number(rightId)) && Number(rightId) >= 0 ? String(rightId) : null,
         children: []
       })
     }
-
     for (const node of nodesById.values()) {
       const children = [node.leftId, node.rightId]
-        .filter(Boolean)
-        .map((childId) => nodesById.get(childId))
-        .filter(Boolean)
+        .filter(Boolean).map((childId) => nodesById.get(childId)).filter(Boolean)
       node.children = children
       if (children.length > 0) node.isLeaf = false
       node.name = node.isLeaf
         ? `Leaf ${node.leafMetadata?.leaf_id ?? node.leafMetadata?.leafId ?? node.id}`
         : `${node.splitFeature ?? 'feature'} <= ${(node.threshold ?? 0).toFixed(3)}`
     }
-
     return nodesById.get('0') ?? nodesById.values().next().value ?? null
   }
 
@@ -362,18 +303,14 @@ function treeData() {
 function activePathIds(treeRoot) {
   const pathIds = new Set((explanation.value?.path_summary?.node_ids ?? []).map((id) => String(id)))
   if (pathIds.size) return pathIds
-
   const row = selectedMatchRow.value
   if (!row || !treeRoot) return pathIds
-
   let node = treeRoot
   while (node) {
     pathIds.add(String(node.id))
     if (node.isLeaf || !node.children?.length) break
-
     const value = Number(row[node.splitFeature])
     if (!Number.isFinite(value) || !Number.isFinite(node.threshold) || node.children.length < 2) break
-
     node = value <= node.threshold ? node.children[0] : node.children[1]
   }
   return pathIds
@@ -386,14 +323,10 @@ function contextualNodeIds(fullRoot, highlightedNodeIds) {
     if (!highlightedNodeIds.has(id)) continue
     const parent = node.parent
     if (parent?.children?.length) {
-      for (const sibling of parent.children) {
-        includeIds.add(String(sibling.data.id))
-      }
+      for (const sibling of parent.children) { includeIds.add(String(sibling.data.id)) }
     }
     if (node.children?.length) {
-      for (const child of node.children) {
-        includeIds.add(String(child.data.id))
-      }
+      for (const child of node.children) { includeIds.add(String(child.data.id)) }
     }
   }
   return includeIds
@@ -402,10 +335,7 @@ function contextualNodeIds(fullRoot, highlightedNodeIds) {
 function updateFeatureMatches() {
   const query = featureSearch.value.trim().toLowerCase()
   if (!query || !explanation.value) {
-    matchedFeatureNodeIds.value = []
-    activeMatchIndex.value = 0
-    focusedNodeId.value = null
-    return
+    matchedFeatureNodeIds.value = []; activeMatchIndex.value = 0; focusedNodeId.value = null; return
   }
   const root = treeData()
   if (!root) return
@@ -432,39 +362,25 @@ function focusSelectedMatchNode() {
 
 function applyPreset(mode) {
   if (mode === 'context') {
-    showActiveContextOnly.value = true
-    maxDepth.value = Math.min(maxDepthLimit.value, 6)
-    largeTreeOverride.value = false
-    return
+    showActiveContextOnly.value = true; maxDepth.value = Math.min(maxDepthLimit.value, 6); largeTreeOverride.value = false; return
   }
   if (mode === 'medium') {
-    showActiveContextOnly.value = false
-    maxDepth.value = Math.min(maxDepthLimit.value, 8)
-    return
+    showActiveContextOnly.value = false; maxDepth.value = Math.min(maxDepthLimit.value, 8); return
   }
   if (mode === 'full') {
-    largeTreeOverride.value = true
-    showActiveContextOnly.value = false
-    maxDepth.value = maxDepthLimit.value
+    largeTreeOverride.value = true; showActiveContextOnly.value = false; maxDepth.value = maxDepthLimit.value
   }
 }
 
 function toggleExpandAll() {
   if (expandAll.value && fullExpansionBlocked.value && maxDepth.value >= maxDepthLimit.value - 1) {
-    expandAll.value = false
-    return
+    expandAll.value = false; return
   }
-  if (expandAll.value) {
-    collapsed.value = new Set()
-    return
-  }
+  if (expandAll.value) { collapsed.value = new Set(); return }
   const root = treeData()
   if (!root) return
-  const internalNodeIds = d3
-    .hierarchy(root)
-    .descendants()
-    .filter((node) => node.children?.length)
-    .map((node) => node.data.id)
+  const internalNodeIds = d3.hierarchy(root).descendants()
+    .filter((node) => node.children?.length).map((node) => node.data.id)
   collapsed.value = new Set(internalNodeIds)
 }
 
@@ -560,21 +476,15 @@ function drawTree() {
   const positionedNodes = new Map(
     visibleNodes.map((node) => [
       node.data.id,
-      {
-        px: node.x - minX + contentPaddingX,
-        py: node.y - minY + contentPaddingY
-      }
+      { px: node.x - minX + contentPaddingX, py: node.y - minY + contentPaddingY }
     ])
   )
   const contentWidth = maxX - minX + contentPaddingX * 2
   const contentHeight = maxY - minY + contentPaddingY * 2
   const contentBounds = {
-    minX: contentPaddingX,
-    maxX: contentPaddingX + (maxX - minX),
-    minY: contentPaddingY,
-    maxY: contentPaddingY + (maxY - minY),
-    width: contentWidth,
-    height: contentHeight
+    minX: contentPaddingX, maxX: contentPaddingX + (maxX - minX),
+    minY: contentPaddingY, maxY: contentPaddingY + (maxY - minY),
+    width: contentWidth, height: contentHeight
   }
   latestVisibleLayout.value = visibleNodes.map((node) => ({
     id: String(node.data.id),
@@ -584,10 +494,7 @@ function drawTree() {
   highlightedNodeIdsForView.value = new Set([...highlightedNodeIds].map((id) => String(id)))
 
   graph
-    .append('g')
-    .selectAll('path')
-    .data(links)
-    .join('path')
+    .append('g').selectAll('path').data(links).join('path')
     .attr('fill', 'none')
     .attr('stroke', (d) =>
       highlightedLinkIds.has(`${d.source.data.id}->${d.target.data.id}`) ? '#f97316' : '#94a3b8'
@@ -607,10 +514,7 @@ function drawTree() {
     )
 
   const nodes = graph
-    .append('g')
-    .selectAll('g')
-    .data(visibleNodes)
-    .join('g')
+    .append('g').selectAll('g').data(visibleNodes).join('g')
     .attr('transform', (d) => {
       const pos = positionedNodes.get(d.data.id)
       return `translate(${pos.px},${pos.py})`
@@ -623,17 +527,12 @@ function drawTree() {
     .on('click', (_, d) => {
       if (!d.children?.length) return
       const next = new Set(collapsed.value)
-      if (next.has(d.data.id)) {
-        next.delete(d.data.id)
-      } else {
-        next.add(d.data.id)
-      }
+      if (next.has(d.data.id)) { next.delete(d.data.id) } else { next.add(d.data.id) }
       collapsed.value = next
     })
 
   nodes
-    .append('circle')
-    .attr('r', 7)
+    .append('circle').attr('r', 7)
     .attr('fill', (d) => {
       const depthLimitedLeaf = d.depth >= depthLimit && (d.children?.length ?? 0) > 0
       if ((d.data.isLeaf || depthLimitedLeaf) && d.data.leafPrediction != null) {
@@ -653,9 +552,7 @@ function drawTree() {
     })
 
   nodes
-    .append('text')
-    .attr('dy', -12)
-    .attr('text-anchor', 'middle')
+    .append('text').attr('dy', -12).attr('text-anchor', 'middle')
     .style('font-size', '12.5px')
     .style('font-weight', (d) => (d.data.isLeaf ? 600 : 500))
     .text((d) => d.data.name)
@@ -667,10 +564,7 @@ function drawTree() {
   })
 
   graph
-    .append('g')
-    .selectAll('g')
-    .data(adjacentSplitNodes)
-    .join('g')
+    .append('g').selectAll('g').data(adjacentSplitNodes).join('g')
     .attr('transform', (d) => {
       const pos = positionedNodes.get(d.data.id)
       return `translate(${pos.px + 12},${pos.py - 26})`
@@ -683,31 +577,16 @@ function drawTree() {
     .on('click', (event, d) => {
       event.stopPropagation()
       const next = new Set(collapsed.value)
-      if (next.has(d.data.id)) {
-        next.delete(d.data.id)
-      } else {
-        next.add(d.data.id)
-      }
+      if (next.has(d.data.id)) { next.delete(d.data.id) } else { next.add(d.data.id) }
       collapsed.value = next
     })
     .call((group) => {
-      group
-        .append('rect')
-        .attr('x', -10)
-        .attr('y', -9)
-        .attr('width', 20)
-        .attr('height', 16)
-        .attr('rx', 4)
-        .attr('fill', '#ffffff')
-        .attr('stroke', '#475569')
-        .attr('stroke-width', 1)
-      group
-        .append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .style('font-size', '12px')
-        .style('font-weight', 700)
-        .attr('fill', '#0f172a')
+      group.append('rect')
+        .attr('x', -10).attr('y', -9).attr('width', 20).attr('height', 16).attr('rx', 4)
+        .attr('fill', '#ffffff').attr('stroke', '#475569').attr('stroke-width', 1)
+      group.append('text')
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .style('font-size', '12px').style('font-weight', 700).attr('fill', '#0f172a')
         .text((d) => (collapsed.value.has(d.data.id) ? '+' : '−'))
     })
 
@@ -719,18 +598,14 @@ function setupZoom(svgWidth, svgHeight, contentBounds) {
   const svg = d3.select(treeSvg.value)
   const behavior =
     zoomBehavior.value ??
-    d3
-      .zoom()
-      .scaleExtent([0.35, 4.5])
+    d3.zoom().scaleExtent([0.35, 4.5])
       .on('zoom', (event) => {
         zoomTransform.value = event.transform
         svg.select('.zoom-layer').attr('transform', event.transform)
       })
-
   zoomBehavior.value = behavior
   svg.call(behavior).on('dblclick.zoom', null)
   const hasExistingTransform = zoomTransform.value.k !== 1 || zoomTransform.value.x !== 0 || zoomTransform.value.y !== 0
-
   defaultTransform.value = fitTransform(contentBounds, svgWidth, svgHeight)
   const shouldUseDefault = shouldAutoFitTree.value || !hasExistingTransform
   const initialTransform = shouldUseDefault ? defaultTransform.value : zoomTransform.value
@@ -744,10 +619,7 @@ function fitTransform(bounds, svgWidth, svgHeight) {
   const centerX = (bounds.minX + bounds.maxX) / 2
   const centerY = (bounds.minY + bounds.maxY) / 2
   const padding = 50
-  const scale = Math.max(
-    0.35,
-    Math.min(4.5, Math.min((svgWidth - padding * 2) / width, (svgHeight - padding * 2) / height))
-  )
+  const scale = Math.max(0.35, Math.min(4.5, Math.min((svgWidth - padding * 2) / width, (svgHeight - padding * 2) / height)))
   return d3.zoomIdentity.translate(svgWidth / 2 - centerX * scale, svgHeight / 2 - centerY * scale).scale(scale)
 }
 
@@ -762,7 +634,6 @@ function focusActivePath() {
   const highlighted = latestVisibleLayout.value.filter((node) => highlightedNodeIdsForView.value.has(node.id))
   if (!highlighted.length) return
   dimNonPathBranches.value = true
-
   const minX = d3.min(highlighted, (node) => node.x) ?? 0
   const maxX = d3.max(highlighted, (node) => node.x) ?? 0
   const minY = d3.min(highlighted, (node) => node.y) ?? 0
@@ -790,24 +661,14 @@ function drawBars() {
 
   svg.append('g').attr('transform', `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x))
   svg.append('g').attr('transform', `translate(${margin.left},0)`).call(d3.axisLeft(y))
-  svg
-    .append('text')
-    .attr('x', (margin.left + width - margin.right) / 2)
-    .attr('y', height - 16)
-    .attr('text-anchor', 'middle')
-    .style('font-size', '12px')
-    .style('fill', '#334155')
+  svg.append('text')
+    .attr('x', (margin.left + width - margin.right) / 2).attr('y', height - 16)
+    .attr('text-anchor', 'middle').style('font-size', '12px').style('fill', '#334155')
     .text('Cumulative split-margin contribution (Σ|feature value − split threshold| on active path)')
 
-  svg
-    .append('g')
-    .selectAll('rect')
-    .data(rows)
-    .join('rect')
-    .attr('x', margin.left)
-    .attr('y', (d) => y(d.feature))
-    .attr('width', (d) => x(d.score) - margin.left)
-    .attr('height', y.bandwidth())
+  svg.append('g').selectAll('rect').data(rows).join('rect')
+    .attr('x', margin.left).attr('y', (d) => y(d.feature))
+    .attr('width', (d) => x(d.score) - margin.left).attr('height', y.bandwidth())
     .attr('fill', '#0ea5e9')
 }
 
@@ -820,6 +681,7 @@ function formatFixed(value, digits = 3) {
 <template>
   <section class="panel">
     <h2>Decision-tree explorer for selected match context</h2>
+
     <div class="filters">
       <label>
         Focal player
@@ -829,6 +691,7 @@ function formatFixed(value, digits = 3) {
           </option>
         </select>
       </label>
+
       <label>
         Opponent search
         <input
@@ -837,6 +700,7 @@ function formatFixed(value, digits = 3) {
           placeholder="Filter match rows by opponent"
         />
       </label>
+
       <label>
         Match row
         <select v-model="selectedMatchKey">
@@ -845,9 +709,11 @@ function formatFixed(value, digits = 3) {
         </select>
       </label>
     </div>
-    <p>Choose a focal player, then choose a specific match row to explain.</p>
+
+    <p class="subtle">Choose a focal player, then choose a specific match row to explain.</p>
     <p v-if="!canRequestPrediction" class="error-text">{{ schemaGuardMessage }}</p>
     <p v-if="error" class="error-text">{{ error }}</p>
+
     <div v-if="contextPanel" class="path-summary">
       <h3>Match prediction context</h3>
       <p>
@@ -867,22 +733,27 @@ function formatFixed(value, digits = 3) {
         <strong>win_probability:</strong>
         {{ contextPanel.win_probability == null ? '-' : formatFixed(contextPanel.win_probability) }}
       </p>
-      <p>Prediction is for the selected match context (focal player vs opponent), not a general player rating.</p>
+      <p class="subtle">Prediction is for the selected match context (focal player vs opponent), not a general player rating.</p>
     </div>
+
     <h3>Collapsible tree (full model structure + active path)</h3>
+
     <div class="tree-controls">
       <label>
         Max depth: {{ maxDepth }}
         <input v-model.number="maxDepth" type="range" min="0" :max="maxDepthLimit" step="1" />
       </label>
-      <label>
+
+      <label class="inline-option">
         <input v-model="showActiveContextOnly" type="checkbox" />
         Show only active path + 1-hop siblings
       </label>
-      <label>
+
+      <label class="inline-option">
         <input v-model="expandAll" type="checkbox" />
         Expand all / Collapse all
       </label>
+
       <label>
         Feature search
         <input
@@ -891,31 +762,36 @@ function formatFixed(value, digits = 3) {
           placeholder="Type feature name (e.g., ace_rate)"
         />
       </label>
+
       <div class="search-actions">
-        <button type="button" :disabled="!matchedFeatureNodeIds.length" @click="cycleFeatureMatch(-1)">Prev</button>
-        <button type="button" :disabled="!matchedFeatureNodeIds.length" @click="cycleFeatureMatch(1)">Next</button>
+        <button type="button" :disabled="!matchedFeatureNodeIds.length" @click="cycleFeatureMatch(-1)">← Prev</button>
+        <button type="button" :disabled="!matchedFeatureNodeIds.length" @click="cycleFeatureMatch(1)">Next →</button>
         <span class="subtle">
           {{ matchedFeatureNodeIds.length ? `${activeMatchIndex + 1}/${matchedFeatureNodeIds.length}` : '0 matches' }}
         </span>
       </div>
     </div>
+
     <div v-if="fullExpansionBlocked" class="expansion-warning">
       Large tree detected ({{ treeStats.nodeCount }} nodes, depth {{ treeStats.maxDepth }}).
       Showing interpretable active-path context by default.
-      <div class="tree-actions">
-        <button type="button" @click="applyPreset('context')">Quick return: Context</button>
-        <button type="button" @click="applyPreset('medium')">Preset: Depth 8</button>
+      <div class="tree-actions" style="margin-top:8px;">
+        <button type="button" @click="applyPreset('context')">Context preset</button>
+        <button type="button" @click="applyPreset('medium')">Depth 8 preset</button>
         <button type="button" class="secondary" @click="applyPreset('full')">Show full tree anyway</button>
       </div>
     </div>
+
     <div class="tree-actions">
-      <button type="button" class="secondary" @click="focusActivePath">Focus Active Path</button>
+      <button type="button" @click="focusActivePath">Focus active path</button>
       <button type="button" @click="resetView">Reset view</button>
       <button type="button" @click="applyPreset('context')">Return to context preset</button>
     </div>
+
     <div ref="treeViewport" class="tree-scroll-wrap">
       <svg ref="treeSvg" class="chart chart-tree"></svg>
     </div>
+
     <div v-if="pathSummary" class="path-summary">
       <h3>Selected match-context path summary</h3>
       <p>
@@ -929,6 +805,7 @@ function formatFixed(value, digits = 3) {
         </li>
       </ol>
     </div>
+
     <h3>Feature importance bars</h3>
     <svg ref="barSvg" class="chart"></svg>
   </section>

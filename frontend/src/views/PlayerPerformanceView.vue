@@ -46,7 +46,6 @@ const effectiveMatchRows = computed(() => {
   const rows = selectedPlayerRows.value
   if (!rows.length) return []
   if (!useBrushWindowForMatches.value || !hasBrushWindow.value) return rows
-
   const [start, end] = domain.value
   const filtered = rows.filter((row) => row.matchDateObj && row.matchDateObj >= start && row.matchDateObj <= end)
   return filtered.length ? filtered : rows
@@ -117,10 +116,7 @@ watch(
 watch(
   [matchOptions, useBrushWindowForMatches],
   ([options]) => {
-    if (!options.length) {
-      selectedMatchKey.value = ''
-      return
-    }
+    if (!options.length) { selectedMatchKey.value = ''; return }
     if (!options.some((option) => option.key === selectedMatchKey.value)) {
       selectedMatchKey.value = options[0].key
     }
@@ -246,10 +242,7 @@ function drawBrush() {
 
   const brush = d3.brushX().extent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]])
     .on('brush end', (event) => {
-      if (!event.selection) {
-        domain.value = null
-        return
-      }
+      if (!event.selection) { domain.value = null; return }
       const [a, b] = event.selection
       domain.value = [x.invert(a), x.invert(b)]
     })
@@ -261,14 +254,16 @@ function drawBrush() {
 <template>
   <section class="panel">
     <h2 v-if="!embedded">Player performance (multi-metric time series)</h2>
+
     <div class="trend-header">
       <h3>Trend context for {{ selectedPlayerLabel }}</h3>
       <button
         v-if="selectedMatchRow && selectedMatchKey"
         type="button"
+        class="secondary"
         @click="continueToMatchExplanation"
       >
-        View predicted outcomes &amp; explanation
+        View predicted outcomes &amp; explanation →
       </button>
     </div>
 
@@ -295,7 +290,6 @@ function drawBrush() {
         <input v-model="useBrushWindowForMatches" type="checkbox" :disabled="!hasBrushWindow" />
         Use brush date window ({{ selectedWindowLabel }})
       </label>
-
     </div>
 
     <p v-if="error" class="error-text">{{ error }}</p>
