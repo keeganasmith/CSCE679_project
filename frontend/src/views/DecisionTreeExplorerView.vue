@@ -7,6 +7,7 @@ const props = defineProps({
   players: { type: Array, required: true },
   featureColumns: { type: Array, required: true },
   selectedPlayerId: { type: String, default: '' },
+  selectedComparisonPlayerId: { type: String, default: '' },
   selectedMatchKey: { type: String, default: '' },
   activeStoryStep: { type: String, default: 'overview' },
   clusterRequestId: { type: String, default: '' }
@@ -66,6 +67,26 @@ const matchKeyForRow = (row) => {
   return `composite:${row?.player_id ?? ''}|${row?.opponent_id ?? ''}|${row?.match_date ?? ''}`
 }
 const playerMatchRows = computed(() => props.players.filter((p) => p.player_id === selectedPlayer.value))
+const preferredMatchKey = computed(() => {
+  const comparisonId = String(props.selectedComparisonPlayerId ?? '').trim()
+  if (!comparisonId) return ''
+
+  const matchesAgainstComparison = playerMatchRows.value.filter(
+    (row) => String(row.opponent_id ?? '') === comparisonId
+  )
+  if (!matchesAgainstComparison.length) return ''
+
+  const rankedMatches = [...matchesAgainstComparison].sort((a, b) => {
+    const aTs = Date.parse(String(a.match_date ?? ''))
+    const bTs = Date.parse(String(b.match_date ?? ''))
+    const aHasDate = Number.isFinite(aTs)
+    const bHasDate = Number.isFinite(bTs)
+    if (aHasDate && bHasDate && aTs !== bTs) return bTs - aTs
+    if (aHasDate !== bHasDate) return aHasDate ? -1 : 1
+    return Number(b.row_id ?? 0) - Number(a.row_id ?? 0)
+  })
+  return matchKeyForRow(rankedMatches[0])
+})
 const allMatchOptions = computed(() =>
   playerMatchRows.value.map((row) => ({
     key: matchKeyForRow(row),
@@ -148,8 +169,21 @@ watch(selectedPlayer, () => {
   opponentSearch.value = ''
   const keys = playerMatchRows.value.map((row) => matchKeyForRow(row))
   if (!keys.length) { selectedMatchKey.value = ''; return }
+  const preferredKey = preferredMatchKey.value
+  if (preferredKey && keys.includes(preferredKey)) {
+    selectedMatchKey.value = preferredKey
+    return
+  }
   if (!keys.includes(selectedMatchKey.value)) { selectedMatchKey.value = keys[0] }
 })
+watch(
+  preferredMatchKey,
+  (key) => {
+    if (!key || key === selectedMatchKey.value) return
+    selectedMatchKey.value = key
+  },
+  { immediate: true }
+)
 watch(
   matchOptions,
   (options) => {

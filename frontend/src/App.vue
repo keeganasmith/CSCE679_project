@@ -679,7 +679,9 @@ function reconcileStoryStateAfterClustering() {
             </div>
             <DecisionTreeExplorerView
               :players="enrichedPlayers" :feature-columns="predictorFeatureColumns"
-              :selected-player-id="selectedPlayerId" :selected-match-key="selectedMatchKey"
+              :selected-player-id="selectedPlayerId"
+              :selected-comparison-player-id="selectedComparisonPlayerId"
+              :selected-match-key="selectedMatchKey"
               :active-story-step="activeStoryStep" :cluster-request-id="clusterRequestId"
               @update:selected-player-id="selectedPlayerId = $event"
               @update:selected-match-key="selectedMatchKey = $event"
