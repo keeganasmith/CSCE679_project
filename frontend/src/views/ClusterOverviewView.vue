@@ -76,7 +76,6 @@ const summaries = computed(() => {
     }),
     (r) => r.cluster_id
   )
-
   return grouped.map(([cluster, values]) => ({ cluster, ...values }))
 })
 
@@ -204,7 +203,6 @@ watch(
       if (currentPlayer) selectedPlayer.value = ''
       return
     }
-
     if (!playerIds.includes(currentPlayer)) {
       selectedPlayer.value = playerIds[0]
     }
@@ -223,44 +221,46 @@ watch(selectedPlayer, (playerId) => {
   <section class="panel">
     <h2>Cluster projection overview</h2>
     <p class="subtle">
-      Active run uses <strong>{{ clusteringConfig.algorithm }}</strong> with
+      Active run uses <strong style="color:var(--text-1)">{{ clusteringConfig.algorithm }}</strong> with
       {{ clusteringConfig.attributes.length }} attributes.
     </p>
 
-    <label class="inline-filter">
-      Cluster
-      <select v-model="selectedCluster">
-        <option value="all">All</option>
-        <option v-for="cluster in clusters" :key="cluster" :value="String(cluster)">Cluster {{ cluster }}</option>
-      </select>
-    </label>
-
-    <label class="inline-filter">
-      Player
-      <select v-model="selectedPlayer" :disabled="!playerOptions.length">
-        <option v-if="!playerOptions.length" value="">No players available</option>
-        <option v-for="player in playerOptions" :key="player.id" :value="player.id">
-          {{ player.label }}
-        </option>
-      </select>
-    </label>
-
-    <form class="inline-filter" @submit.prevent="highlightPlayerByName">
-      <label>
-        Find player by name
-        <input
-          v-model="playerSearchTerm"
-          type="search"
-          list="cluster-player-names"
-          placeholder="Type a player name"
-        />
+    <div class="filters">
+      <label class="inline-filter">
+        Cluster
+        <select v-model="selectedCluster">
+          <option value="all">All</option>
+          <option v-for="cluster in clusters" :key="cluster" :value="String(cluster)">Cluster {{ cluster }}</option>
+        </select>
       </label>
-      <datalist id="cluster-player-names">
-        <option v-for="name in playerSearchOptions" :key="name" :value="name"></option>
-      </datalist>
-      <button type="submit">Highlight player</button>
-      <p v-if="searchError" class="error-text">{{ searchError }}</p>
-    </form>
+
+      <label class="inline-filter">
+        Player
+        <select v-model="selectedPlayer" :disabled="!playerOptions.length">
+          <option v-if="!playerOptions.length" value="">No players available</option>
+          <option v-for="player in playerOptions" :key="player.id" :value="player.id">
+            {{ player.label }}
+          </option>
+        </select>
+      </label>
+
+      <form class="inline-filter" @submit.prevent="highlightPlayerByName">
+        <label>
+          Find player by name
+          <input
+            v-model="playerSearchTerm"
+            type="search"
+            list="cluster-player-names"
+            placeholder="Type a player name"
+          />
+        </label>
+        <datalist id="cluster-player-names">
+          <option v-for="name in playerSearchOptions" :key="name" :value="name"></option>
+        </datalist>
+        <button type="submit" style="margin-top:6px;">Highlight player</button>
+        <p v-if="searchError" class="error-text">{{ searchError }}</p>
+      </form>
+    </div>
 
     <svg ref="svgRef" class="chart"></svg>
 

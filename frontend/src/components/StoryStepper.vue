@@ -92,44 +92,62 @@ function activateStep(stepKey) {
 
 <style scoped>
 .story-stepper {
-  padding: 0.75rem 1rem;
+  padding: 12px 16px;
 }
 
 .stepper-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.6rem;
+  gap: 6px;
 }
 
 .step-chip {
-  border: 1px solid #cbd5e1;
-  border-radius: 0.6rem;
-  background: #f8fafc;
-  padding: 0.45rem 0.55rem;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #0d1117;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.2rem;
+  gap: 3px;
   text-align: left;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.step-chip:hover {
+  border-color: #6e7681;
+  background: #21262d;
 }
 
 .step-chip.active {
-  border-color: #2563eb;
-  background: #dbeafe;
+  border-color: #2f81f7;
+  background: #1f4f8f;
 }
 
 .step-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b949e;
+  letter-spacing: 0.04em;
+}
+
+.step-chip.active .step-title {
+  color: #2f81f7;
 }
 
 .step-subtitle {
-  font-size: 0.73rem;
-  line-height: 1.2;
+  font-size: 12px;
+  line-height: 1.3;
+  color: #6e7681;
+}
+
+.step-chip.active .step-subtitle {
+  color: #8b949e;
 }
 
 .helper-text {
-  margin: 0.55rem 0 0;
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #6e7681;
 }
 </style>
