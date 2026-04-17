@@ -56,6 +56,7 @@ const algoDescriptions = {
 
 const availableAttributes   = computed(() => health.value?.default_attributes ?? [])
 const predictorFeatureColumns = computed(() => health.value?.predict_feature_columns ?? [])
+const selectedAttributeSet = computed(() => new Set(selectedAttributes.value))
 
 const projectionMetadata = computed(() => {
   const projection = clusterResult.value?.projection
@@ -81,6 +82,10 @@ const activeClusteringConfig = computed(() => ({
 }))
 
 const canRunClustering = computed(() => selectedAttributes.value.length > 0)
+const allAttributesSelected = computed(() =>
+  availableAttributes.value.length > 0 &&
+  selectedAttributes.value.length === availableAttributes.value.length
+)
 
 function normalizePlayerId(playerId) {
   const normalized = String(playerId ?? '').trim()
@@ -141,6 +146,12 @@ onMounted(loadInitialState)
 
 watch(availableAttributes, attrs => {
   if (!attrs.length) return
+  if (!selectedAttributes.value.length) {
+    selectedAttributes.value = [...attrs]
+    return
+  }
+  const allowed = new Set(attrs)
+  selectedAttributes.value = selectedAttributes.value.filter(attr => allowed.has(attr))
   if (!selectedAttributes.value.length) selectedAttributes.value = [...attrs]
 }, { immediate: true })
 
@@ -169,6 +180,25 @@ watch([selectedClusterId, playersInSelectedCluster], ([, players]) => {
 }, { immediate: true })
 
 watch(selectedPlayerId, id => { if (id) playerTrendsPanelOpen.value = true })
+
+function toggleAttribute(attribute) {
+  if (!attribute) return
+  if (selectedAttributeSet.value.has(attribute)) {
+    if (selectedAttributes.value.length === 1) return
+    selectedAttributes.value = selectedAttributes.value.filter(attr => attr !== attribute)
+    return
+  }
+  selectedAttributes.value = [...selectedAttributes.value, attribute]
+}
+
+function selectAllAttributes() {
+  selectedAttributes.value = [...availableAttributes.value]
+}
+
+function clearAttributeSelection() {
+  if (!availableAttributes.value.length) return
+  selectedAttributes.value = [availableAttributes.value[0]]
+}
 
 function normalizeParamsForPayload() {
   if (algorithm.value === 'dbscan')       return { eps: Number(eps.value), min_samples: Number(minSamples.value) }
@@ -461,19 +491,35 @@ function reconcileStoryStateAfterClustering() {
       <div class="sidebar-section">
         <div class="sidebar-label">
           Active attributes
-          <span class="tip" data-tip="These stats are used as clustering dimensions. All attributes are selected by default. Use the selector in the Cluster Overview tab to change the selection.">?</span>
+          <span class="tip" data-tip="These stats are used as clustering dimensions. Toggle individual attributes below before running clustering.">?</span>
+        </div>
+        <div class="attribute-actions">
+          <button type="button" @click="selectAllAttributes" :disabled="allAttributesSelected || !availableAttributes.length">
+            Select all
+          </button>
+          <button type="button" @click="clearAttributeSelection" :disabled="selectedAttributes.length <= 1 || !availableAttributes.length">
+            Keep one
+          </button>
         </div>
         <div class="attr-list">
-          <div v-for="(attr, i) in availableAttributes" :key="attr" class="attr-chip">
+          <button
+            type="button"
+            v-for="(attr, i) in availableAttributes"
+            :key="attr"
+            class="attr-chip attr-chip-toggle"
+            :class="{ selected: selectedAttributeSet.has(attr) }"
+            @click="toggleAttribute(attr)"
+            :aria-pressed="selectedAttributeSet.has(attr)"
+          >
             <div class="chip-dot" :style="{ background: ['#0969da','#1a7f37','#f97316','#d4537e','#9a6700','#7f77dd'][i % 6] }"></div>
             <span>{{ attr }}</span>
-          </div>
+            <span class="attr-chip-state">{{ selectedAttributeSet.has(attr) ? 'On' : 'Off' }}</span>
+          </button>
           <div v-if="!availableAttributes.length" class="param-hint">Attributes load after connecting to the API.</div>
         </div>
-        <!-- Hidden multi-select keeps selectedAttributes v-model in sync with the API-driven list -->
-        <select v-model="selectedAttributes" multiple style="display:none;">
-          <option v-for="attr in availableAttributes" :key="attr" :value="attr">{{ attr }}</option>
-        </select>
+        <div class="param-hint" style="margin-top:6px;">
+          {{ selectedAttributes.length }} / {{ availableAttributes.length || 0 }} selected
+        </div>
       </div>
 
     </aside>
