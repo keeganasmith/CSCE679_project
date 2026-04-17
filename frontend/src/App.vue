@@ -15,6 +15,7 @@ const playerRows = ref([])
 const clusterByPlayer = ref({})
 const selectedClusterId = ref('all')
 const selectedPlayerId = ref('')
+const selectedComparisonPlayerId = ref('')
 const selectedMatchKey = ref('')
 const playerTrendsPanelOpen = ref(false)
 const predictionPanelOpen = ref(false)
@@ -132,6 +133,10 @@ const selectedPlayerDisplayName = computed(() => {
   if (!selectedPlayerId.value) return 'No player selected'
   return overviewPlayers.value.find(p => p.player_id === selectedPlayerId.value)?.player_name ?? selectedPlayerId.value
 })
+const selectedComparisonPlayerDisplayName = computed(() => {
+  if (!selectedComparisonPlayerId.value) return 'No comparison player selected'
+  return overviewPlayers.value.find(p => p.player_id === selectedComparisonPlayerId.value)?.player_name ?? selectedComparisonPlayerId.value
+})
 
 const playersInSelectedCluster = computed(() => {
   if (selectedClusterId.value === 'all') return enrichedPlayers.value
@@ -170,12 +175,16 @@ watch([selectedClusterId, playersInSelectedCluster], ([, players]) => {
   const ids = players.map(p => String(p.player_id))
   if (!ids.length) {
     if (selectedPlayerId.value) { selectedPlayerId.value = ''; selectedMatchKey.value = '' }
+    if (selectedComparisonPlayerId.value) selectedComparisonPlayerId.value = ''
     return
   }
   if (!ids.includes(selectedPlayerId.value)) {
     selectedPlayerId.value = ids[0]
     selectedMatchKey.value = ''
     explainerContext.value = { matchLabel: 'No match selected', winProbability: null }
+  }
+  if (selectedComparisonPlayerId.value && !ids.includes(selectedComparisonPlayerId.value)) {
+    selectedComparisonPlayerId.value = ''
   }
 }, { immediate: true })
 
@@ -290,6 +299,9 @@ function reconcileStoryStateAfterClustering() {
     selectedPlayerId.value = validPlayerIds[0] ?? ''
     selectedMatchKey.value = ''
     explainerContext.value = { matchLabel: 'No match selected', winProbability: null }
+  }
+  if (selectedComparisonPlayerId.value && !validPlayerIds.includes(selectedComparisonPlayerId.value)) {
+    selectedComparisonPlayerId.value = ''
   }
 }
 </script>
@@ -612,9 +624,11 @@ function reconcileStoryStateAfterClustering() {
               :cluster-result="clusterResult" :players="overviewPlayers" :cluster-players="clusterPlayers"
               :clustering-config="activeClusteringConfig" :projection-metadata="projectionMetadata"
               :selected-cluster-id="selectedClusterId" :selected-player-id="selectedPlayerId"
+              :selected-comparison-player-id="selectedComparisonPlayerId"
               :active-story-step="activeStoryStep" :cluster-request-id="clusterRequestId"
               @update:selected-cluster-id="selectedClusterId = $event"
               @update:selected-player-id="selectedPlayerId = $event"
+              @update:selected-comparison-player-id="selectedComparisonPlayerId = $event"
               @update:active-story-step="activeStoryStep = $event"
             />
           </div>
@@ -626,7 +640,7 @@ function reconcileStoryStateAfterClustering() {
               <span>
                 <strong>Elo</strong> measures overall strength — higher is better.
                 <strong>Win %</strong> and <strong>Ace %</strong> are career rolling averages.
-                <strong>Brush the mini chart</strong> at the bottom to zoom into a time range.
+                Compare two players side-by-side and use the overlay chart to compare Elo trajectories over time.
                 Once you pick a match, click <em>View predicted outcomes</em> to explain it.
               </span>
             </div>
@@ -636,9 +650,13 @@ function reconcileStoryStateAfterClustering() {
             </div>
             <PlayerPerformanceView
               :players="enrichedPlayers" :selected-player-id="selectedPlayerId"
-              :selected-player-name="selectedPlayerDisplayName" :active-story-step="activeStoryStep"
+              :selected-player-name="selectedPlayerDisplayName"
+              :selected-comparison-player-id="selectedComparisonPlayerId"
+              :selected-comparison-player-name="selectedComparisonPlayerDisplayName"
+              :active-story-step="activeStoryStep"
               :cluster-request-id="clusterRequestId" embedded
               @update:selected-player-id="selectedPlayerId = $event"
+              @update:selected-comparison-player-id="selectedComparisonPlayerId = $event"
               @update:active-story-step="activeStoryStep = $event"
               @select-match-context="applyMatchContextSelection"
             />

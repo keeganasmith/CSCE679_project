@@ -10,12 +10,14 @@ const props = defineProps({
   projectionMetadata: { type: Object, required: true },
   selectedClusterId: { type: String, required: true },
   selectedPlayerId: { type: String, default: '' },
+  selectedComparisonPlayerId: { type: String, default: '' },
   activeStoryStep: { type: String, default: 'overview' },
   clusterRequestId: { type: String, default: '' }
 })
 const emit = defineEmits([
   'update:selectedClusterId',
   'update:selectedPlayerId',
+  'update:selectedComparisonPlayerId',
   'update:activeStoryStep'
 ])
 
@@ -33,6 +35,10 @@ const filtered = computed(() => {
 const selectedPlayer = computed({
   get: () => props.selectedPlayerId,
   set: (value) => emit('update:selectedPlayerId', value)
+})
+const selectedComparisonPlayer = computed({
+  get: () => props.selectedComparisonPlayerId,
+  set: (value) => emit('update:selectedComparisonPlayerId', value)
 })
 
 const playerSearchTerm = ref('')
@@ -95,6 +101,7 @@ function highlightPlayerByName() {
 
   selectedCluster.value = match.cluster
   selectedPlayer.value = match.id
+  if (selectedComparisonPlayer.value === match.id) selectedComparisonPlayer.value = ''
   playerSearchTerm.value = match.name
 }
 
@@ -164,14 +171,32 @@ function drawScatter() {
     .join('circle')
     .attr('cx', (d) => x(Number(d.pc1 ?? 0)))
     .attr('cy', (d) => y(Number(d.pc2 ?? 0)))
-    .attr('r', (d) => (String(d.player_id) === selectedPlayer.value ? 7 : 4))
+    .attr('r', (d) => {
+      const pid = String(d.player_id)
+      if (pid === selectedPlayer.value || pid === selectedComparisonPlayer.value) return 7
+      return 4
+    })
     .attr('fill', (d) => color(d.cluster_id))
-    .attr('stroke', (d) => (String(d.player_id) === selectedPlayer.value ? '#111827' : 'none'))
-    .attr('stroke-width', (d) => (String(d.player_id) === selectedPlayer.value ? 2 : 0))
+    .attr('stroke', (d) => {
+      const pid = String(d.player_id)
+      if (pid === selectedPlayer.value) return '#111827'
+      if (pid === selectedComparisonPlayer.value) return '#7c3aed'
+      return 'none'
+    })
+    .attr('stroke-width', (d) => {
+      const pid = String(d.player_id)
+      return pid === selectedPlayer.value || pid === selectedComparisonPlayer.value ? 2 : 0
+    })
     .attr('opacity', 0.8)
     .style('cursor', 'pointer')
     .on('click', (_, d) => {
-      selectedPlayer.value = String(d.player_id)
+      const clicked = String(d.player_id)
+      if (!selectedPlayer.value || clicked === selectedComparisonPlayer.value) {
+        selectedPlayer.value = clicked
+        if (selectedComparisonPlayer.value === clicked) selectedComparisonPlayer.value = ''
+        return
+      }
+      if (clicked !== selectedPlayer.value) selectedComparisonPlayer.value = clicked
     })
     .append('title')
     .text((d) => `${d.player_name ?? d.player_id}\nCluster ${d.cluster_id}`)
@@ -193,18 +218,22 @@ function drawScatter() {
 }
 
 onMounted(drawScatter)
-watch([filtered, selectedPlayer], drawScatter)
+watch([filtered, selectedPlayer, selectedComparisonPlayer], drawScatter)
 
 watch(
-  [filtered, selectedPlayer],
-  ([players, currentPlayer]) => {
+  [filtered, selectedPlayer, selectedComparisonPlayer],
+  ([players, currentPlayer, currentComparison]) => {
     const playerIds = players.map((player) => String(player.player_id))
     if (!players.length) {
       if (currentPlayer) selectedPlayer.value = ''
+      if (currentComparison) selectedComparisonPlayer.value = ''
       return
     }
     if (!playerIds.includes(currentPlayer)) {
       selectedPlayer.value = playerIds[0]
+    }
+    if (currentComparison && !playerIds.includes(currentComparison)) {
+      selectedComparisonPlayer.value = ''
     }
   },
   { immediate: true }
@@ -235,10 +264,20 @@ watch(selectedPlayer, (playerId) => {
       </label>
 
       <label class="inline-filter">
-        Player
+        Player A
         <select v-model="selectedPlayer" :disabled="!playerOptions.length">
           <option v-if="!playerOptions.length" value="">No players available</option>
           <option v-for="player in playerOptions" :key="player.id" :value="player.id">
+            {{ player.label }}
+          </option>
+        </select>
+      </label>
+
+      <label class="inline-filter">
+        Player B
+        <select v-model="selectedComparisonPlayer" :disabled="!playerOptions.length">
+          <option value="">No comparison player</option>
+          <option v-for="player in playerOptions" :key="`comp-${player.id}`" :value="player.id" :disabled="player.id === selectedPlayer">
             {{ player.label }}
           </option>
         </select>
